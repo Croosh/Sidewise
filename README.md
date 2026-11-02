@@ -1,75 +1,55 @@
-# Sidewise (EdgeBar for Windows in Rust)
+# Sidewise
 
-**Sidewise** is a lightweight, always-resident Windows utility in Rust that transforms the edges of any Windows Precision Touchpad into smooth volume and brightness sliders, with quick mute, media strip control, cursor freeze, fine control, custom on-screen display (OSD), and tray management.
+Sidewise is a small, quiet Windows utility written in Rust. It lets you slide along the outer edges of your laptop touchpad to control volume and screen brightness, without having to reach for function keys or open quick settings.
 
----
-
-## ⚡ Highlights & Features
-
-- **Right Edge = Volume Slider**: Slide up/down along the right edge to adjust system audio smoothly.
-- **Left Edge = Brightness Slider**: Slide up/down along the left edge to adjust display brightness.
-- **System-Style On-Screen Display (OSD)**: Custom layered, click-through pill (`WS_EX_LAYERED | WS_EX_TRANSPARENT`) positioned in Windows 11 style with smooth fade-in (80 ms), hold (1200 ms), and fade-out (220 ms).
-- **Quick Mute**: Double-tap the top-right corner to instantly toggle mute.
-- **Media Strip**: Swipe horizontally along the bottom edge of the touchpad to skip tracks (right for Next, left for Previous); optional short tap to play/pause.
-- **Cursor Freeze**: Low-level mouse hook (`WH_MOUSE_LL`) and pointer clipping suppress cursor movement during active slides.
-- **Fine Control**: Hold `Shift + Alt` mid-slide to apply a `0.25x` gain for micro adjustments without value jumps.
-- **Swap Sides**: Invert edges (left for volume, right for brightness).
-- **Bottom Quarter Only Mode**: Restricts edge sliders to `y >= 75%` to keep normal trackpad gestures completely untouched on top.
-- **Activation Modifiers**: Optional requirement to hold `Alt` or `Ctrl` to trigger edge sliders.
-- **Fluent Tray Icon & Live Flyout**: Anchored above the system tray with a live touchpad visualization, quick toggles, sensitivity and edge-width sliders.
-- **First-Run Setup Guide**: Interactive 3-step practice window with a real-time touch visualizer.
-- **Zero Runtime Overhead**: Single self-contained native binary under 3 MB, no admin privileges required, no Electron or .NET runtime, < 0.5% idle CPU.
+It also includes horizontal track skipping along the bottom edge, a custom on-screen display, cursor freeze while sliding, and a system tray flyout for quick adjustments.
 
 ---
 
-## 🏗️ Architecture
+## What It Does
 
-```
-sidewise/
-  ├── Cargo.toml
-  ├── crates/
-  │     ├── sidewise-core/       Pure Rust gesture engine, config schema, shared types (no OS dependencies)
-  │     ├── sidewise-win/        Win32 Raw Input, HID parser, Core Audio, Brightness, Media, Mouse Hook, OSD
-  │     ├── sidewise-ui/         System tray icon, live flyout popup, preferences window, setup guide
-  │     └── sidewise-app/        main(), lifecycle, single-instance mutex, worker threads
-```
-
-### Threading Model
-
-1. **Input Thread**: Owns the hidden window, Raw Input registration for Precision Touchpads (`0x0D / 0x05`), and low-level mouse hook message pump.
-2. **Engine Thread**: Receives touch frames over a bounded channel, executes the pure state machine, manages arming/filtering/smoothing, and dispatches actions.
-3. **Action Workers**: Core Audio on COM MTA, throttled brightness worker with latest-value-wins queueing, and media keys via `SendInput`.
-4. **UI Thread**: Owns the tray icon, layered acrylic OSD, live flyout, settings window, and interactive onboarding guide.
+- **Right edge volume**: Slide a finger up or down along the right edge of your trackpad to change audio volume.
+- **Left edge brightness**: Slide along the left edge to adjust display brightness.
+- **Bottom edge media strip**: Swipe left or right along the bottom border to skip tracks backward or forward. You can also turn on tap-to-play/pause if you want a quick play/pause target.
+- **Double-tap mute**: Quickly double-tap the top right corner to mute or unmute audio.
+- **Cursor freeze**: While you are actively sliding an edge, your mouse cursor stays locked in place so you do not accidentally click off-screen.
+- **Fine control**: Hold `Shift + Alt` while sliding to adjust at 0.25x speed for precision increments.
+- **Clean OSD**: A minimal volume and brightness pill shows your current level and fades away automatically.
+- **Tray flyout & settings**: Click the system tray icon to view live touchpad levels, toggle options on the fly, adjust sensitivity, or invert sides.
+- **Lightweight**: Single native executable with low CPU and memory footprints. No Electron, no .NET requirements, and no background bloat.
 
 ---
 
-## 🛠️ Building & Running
+## Requirements
 
-### Requirements
-- Windows 10 (1903+) or Windows 11
-- Laptop with a Windows Precision Touchpad (or external Precision Trackpad)
-- Rust 1.80+ (MSVC toolchain recommended)
-
-### Build Commands
-```powershell
-# Build release binary (single .exe under 3 MB)
-cargo build --release
-
-# Run tests
-cargo test
-
-# Launch Sidewise
-.\target\release\sidewise.exe
-
-# Launch directly into the 3-step setup guide
-.\target\release\sidewise.exe --setup
-```
+- Windows 10 (version 1903 or later) or Windows 11
+- A laptop with a Windows Precision Touchpad (or a compatible external precision trackpad)
 
 ---
 
-## ⚙️ Configuration
+## Installation
 
-Settings are stored in `%APPDATA%\Sidewise\config.toml` and applied hot without restart:
+### Installer
+Download `Sidewise-v1.0.0-Setup.exe` from the Releases page and run it. The installer adds shortcuts and gives you the option to start Sidewise when Windows boots.
+
+### Portable
+Download `Sidewise-v1.0.0-Portable.zip`, unzip it anywhere, and launch `sidewise.exe`. No installation required.
+
+---
+
+## How It Works
+
+Sidewise listens to raw multi-touch input directly through Windows Precision Touchpad APIs (`WM_INPUT` with HID usage `0x0D / 0x05`). It watches incoming contact coordinates and runs them through a state machine:
+
+1. **Edge detection**: Contacts starting within the configured margin (default 8% of pad width) qualify for gesture tracking.
+2. **Filtering & rejection**: Multi-finger gestures, palms, and swipes that stray too far into the center of the trackpad are ignored, handing normal cursor movement back to Windows.
+3. **Smooth output**: Active edge slides stream directly to Windows Core Audio (`IAudioEndpointVolume`) or the display brightness worker (WmiMonitorBrightnessMethods / DXVA2 monitor APIs).
+
+---
+
+## Configuration
+
+Preferences are stored in a simple TOML file located at `%APPDATA%\Sidewise\config.toml`:
 
 ```toml
 swap_sides = false
@@ -82,8 +62,38 @@ quick_mute = true
 media_strip = true
 tap_to_play_pause = false
 sensitivity = 1.0         # 0.5 to 2.0
-edge_width = 0.08         # 0.04 to 0.20 (percentage of pad width)
+edge_width = 0.08         # 0.04 to 0.20
 appearance = "system"     # "system" | "light" | "dark"
 open_at_login = true
 brightness_target = "cursor_monitor"
 ```
+
+Changes made through the settings window apply immediately without needing to restart the app.
+
+---
+
+## Building From Source
+
+If you prefer to compile Sidewise yourself:
+
+1. Make sure you have Rust installed (1.80+ with MSVC toolchain).
+2. Clone the repository:
+   ```powershell
+   git clone https://github.com/Croosh/Sidewise.git
+   cd Sidewise
+   ```
+3. Run tests:
+   ```powershell
+   cargo test
+   ```
+4. Build an optimized release binary:
+   ```powershell
+   cargo build --release
+   ```
+   The finished binary will be at `target/release/sidewise.exe`.
+
+---
+
+## License
+
+This project is licensed under the MIT License.
