@@ -1,0 +1,29 @@
+[package]
+name = "sidewise-app"
+version = "0.1.0"
+edition = "2021"
+description = "Main application executable for Sidewise"
+
+[[bin]]
+name = "sidewise"
+path = "src/main.rs"
+
+[dependencies]
+sidewise-core = { path = "../sidewise-core" }
+sidewise-win = { path = "../sidewise-win" }
+sidewise-ui = { path = "../sidewise-ui" }
+crossbeam-channel = "0.5"
+tracing = "0.1"
+anyhow = "1.0"
+
+[dependencies.windows]
+version = "0.58"
+features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_HiDpi",
+    "Win32_System_Threading",
+]
+
+[build-dependencies]
+winres = "0.1.12"

@@ -1,0 +1,36 @@
+[package]
+name = "sidewise-win"
+version = "0.1.0"
+edition = "2021"
+description = "Windows platform backend for Sidewise: Raw Input, HID, audio, brightness, OSD, mouse hook"
+
+[dependencies]
+sidewise-core = { path = "../sidewise-core" }
+crossbeam-channel = "0.5"
+smallvec = { version = "1.16" }
+tracing = "0.1"
+thiserror = "2.0"
+
+[dependencies.windows]
+version = "0.58"
+features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_Input",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_Devices_HumanInterfaceDevice",
+    "Win32_Devices_Display",
+    "Win32_Media_Audio",
+    "Win32_Media_Audio_Endpoints",
+    "Win32_System_Com",
+    "Win32_System_Variant",
+    "Win32_System_Wmi",
+    "Win32_System_LibraryLoader",
+    "Win32_Graphics_Gdi",
+    "Win32_Graphics_Dwm",
+    "Win32_UI_Shell",
+    "Win32_System_Threading",
+    "Win32_System_Registry",
+    "Win32_UI_HiDpi",
+]

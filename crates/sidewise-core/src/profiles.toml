@@ -1,0 +1,98 @@
+# Bundled Touchpad Device Profiles for Sidewise
+
+[[profile]]
+id = "microsoft-surface-pts"
+source = "bundled"
+
+[profile.match]
+vid = 0x045E
+pid = 0x096F
+name = "Microsoft Surface Precision Touchpad (Intel PTS)"
+
+[profile.fields.x]
+type = "value"
+usage_page = 0x01
+usage = 0x30
+
+[profile.fields.y]
+type = "value"
+usage_page = 0x01
+usage = 0x31
+
+[profile.fields.contact_id]
+type = "value"
+usage_page = 0x0D
+usage = 0x51
+
+[profile.fields.tip_switch]
+type = "button"
+usage_page = 0x0D
+usage = 0x42
+
+[profile.fields.contact_count]
+type = "value"
+usage_page = 0x0D
+usage = 0x54
+
+[profile.defaults]
+confidence = true
+tip_switch = true
+
+[profile.axis]
+flip_y = false
+flip_x = false
+
+[profile.tuning]
+edge_width_scale = 1.0
+sensitivity_scale = 1.0
+
+[[profile]]
+id = "synaptics-precision-touchpad"
+source = "bundled"
+
+[profile.match]
+vid = 0x06CB
+pid = 0x7E7E
+name = "Synaptics Precision Touchpad"
+
+[profile.fields.x]
+type = "value"
+usage_page = 0x01
+usage = 0x30
+
+[profile.fields.y]
+type = "value"
+usage_page = 0x01
+usage = 0x31
+
+[profile.fields.contact_id]
+type = "value"
+usage_page = 0x0D
+usage = 0x51
+
+[profile.fields.tip_switch]
+type = "button"
+usage_page = 0x0D
+usage = 0x42
+
+[profile.fields.confidence]
+type = "button"
+usage_page = 0x0D
+usage = 0x47
+
+[profile.fields.contact_count]
+type = "value"
+usage_page = 0x0D
+usage = 0x54
+
+[profile.defaults]
+confidence = true
+tip_switch = true
+
+[profile.axis]
+flip_y = false
+flip_x = false
+
+[profile.tuning]
+edge_width_scale = 1.0
+sensitivity_scale = 1.0

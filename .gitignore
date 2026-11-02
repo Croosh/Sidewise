@@ -1,0 +1,19 @@
+/target
+/dist
+**/*.rs.bk
+*.pdb
+*.user
+*.suo
+.vs/
+.idea/
+.vscode/
+
+# Local logs and temp files
+*.log
+*.tmp
+*.bak
+
+# Environment / local configs
+.env
+.env.*
+!.env.example

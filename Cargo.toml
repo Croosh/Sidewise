@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "crates/sidewise-core",
+    "crates/sidewise-win",
+    "crates/sidewise-ui",
+    "crates/sidewise-app",
+]
+resolver = "2"
