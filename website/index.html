@@ -1396,140 +1396,37 @@
       font-weight: 600;
     }
 
-    /* CTA Right: Live rendered app flyout + architectural atmosphere */
+    /* CTA Right: Live flyout screenshot card */
     .cta-preview-col {
       display: flex;
       flex-direction: column;
-      gap: 20px;
-      width: 100%;
-    }
-
-    .cta-media-wrap {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      align-items: center;
-      width: 100%;
-    }
-
-    .atmosphere-card {
-      position: relative;
-      background-color: #14553a;
-      overflow: hidden;
-      aspect-ratio: 16 / 10;
-      display: flex;
       align-items: center;
       justify-content: center;
       width: 100%;
     }
 
-    .atmosphere-img {
+    [data-ui].flyout-screenshot-card {
+      background-color: #171513;
+      border: 1px solid #2e2a26;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      max-width: 380px;
       width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
     }
 
-    [data-ui].flyout-panel {
-      background-color: var(--app-bg);
-      color: #2b2622;
+    .flyout-screenshot-img {
+      width: 100%;
+      height: auto;
       border-radius: 8px;
-      padding: 24px;
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.24);
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      width: 100%;
-      min-width: 320px;
-      min-height: 220px;
-    }
-
-    [data-ui] .flyout-title-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid #dcd7cf;
-      padding-bottom: 12px;
-    }
-
-    .flyout-title {
-      font-size: var(--step-body);
-      font-weight: 600;
-      color: #2b2622;
-    }
-
-    .flyout-badge {
-      font-size: var(--step-small);
-      font-weight: 600;
-      color: var(--app-teal);
-      background-color: #e4eee9;
-      padding: 4px 10px;
-      border-radius: 4px;
-    }
-
-    .flyout-mini-pad {
-      height: 90px;
-      background-color: #e6e1da;
-      border-radius: 6px;
-      display: flex;
-      justify-content: space-between;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .flyout-edge {
-      width: 14%;
-      height: 100%;
-      background-color: var(--app-teal);
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .flyout-center {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: var(--step-small);
-      color: #564e4a;
-    }
-
-    .flyout-toggle-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: var(--step-small);
-      font-weight: 600;
-    }
-
-    .flyout-switch {
-      width: 40px;
-      height: 22px;
-      background-color: var(--app-teal);
-      border-radius: 11px;
-      position: relative;
-      flex-shrink: 0;
-    }
-
-    .flyout-switch-knob {
-      position: absolute;
-      top: 3px;
-      right: 3px;
-      width: 16px;
-      height: 16px;
-      background-color: #ffffff;
-      border-radius: 50%;
+      display: block;
     }
 
     @media (max-width: 900px) {
       .cta-inner {
-        grid-template-columns: 1fr;
-      }
-      .cta-media-wrap {
         grid-template-columns: 1fr;
       }
     }
@@ -2278,47 +2175,13 @@
         </div>
 
         <div class="cta-preview-col" data-reveal>
-          <div class="cta-media-wrap">
-            <!-- Atmosphere Architectural Photograph (Len dela Cruz, CC0) -->
-            <div class="atmosphere-card">
-              <img src="assets/len-dela-cruz.jpg"
-                   alt="Spiralling concrete curves around a small round window"
-                   class="atmosphere-img"
-                   width="1600"
-                   height="1000"
-                   loading="lazy">
-            </div>
-
-            <!-- Second Architectural Photograph (Roman Kraft, CC0) -->
-            <div class="atmosphere-card">
-              <img src="assets/roman-kraft.jpg"
-                   alt="Modern architectural facade with clean geometric lines"
-                   class="atmosphere-img"
-                   width="1200"
-                   height="800"
-                   loading="lazy">
-            </div>
-          </div>
-
-          <!-- True-size Flyout Panel Fragment -->
-          <div class="flyout-panel" data-ui>
-            <div class="flyout-title-row">
-              <span class="flyout-title">Sidewise · Touchpad Controller</span>
-              <span class="flyout-badge">Connected</span>
-            </div>
-            <div class="flyout-mini-pad">
-              <div class="flyout-edge">Bri</div>
-              <div class="flyout-center">Precision Surface Active</div>
-              <div class="flyout-edge">Vol</div>
-            </div>
-            <div class="flyout-toggle-row">
-              <span>Freeze cursor during edge slide</span>
-              <div class="flyout-switch"><div class="flyout-switch-knob"></div></div>
-            </div>
-            <div class="flyout-toggle-row">
-              <span>Bottom edge media strip</span>
-              <div class="flyout-switch"><div class="flyout-switch-knob"></div></div>
-            </div>
+          <div class="flyout-screenshot-card" data-ui>
+            <img src="assets/sidewise-flyout.png"
+                 alt="Sidewise taskbar flyout interface showing touchpad edges, quick toggle switches, and real-time control status"
+                 class="flyout-screenshot-img"
+                 width="2048"
+                 height="3412"
+                 loading="lazy">
           </div>
         </div>
       </div>
@@ -2357,9 +2220,8 @@
       <div class="footer-tile tile-legal">
         <p class="footer-statement">Edge gestures for Windows laptops.</p>
         <div class="footer-legal-row">
-          <span>© 2024 Sidewise</span>
+          <span>© 2026 Sidewise</span>
           <span>MIT License</span>
-          <span>Photo: Len dela Cruz</span>
         </div>
       </div>
     </div>
