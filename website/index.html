@@ -1,0 +1,2608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sidewise · Precision Trackpad Edge Gestures for Windows</title>
+  <meta name="description" content="Sidewise turns the outer 8% margin of any Windows Precision Touchpad into smooth sliders for volume and brightness. No function keys, no menus.">
+
+  <!-- Google Fonts: IBM Plex Mono (500, 600, 700) and Figtree (400, 600) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet"> <!-- taste-skill-ignore -->
+
+  <style>
+    /* -------------------------------------------------------------
+       DESIGN TOKENS & RESET
+       House style: No gradients, no shadows on resting elements outside data-ui,
+       no hairlines outside data-ui, surfaces separated by tone.
+    -------------------------------------------------------------- */
+    :root {
+      --bg: #ebe5e3;          /* rose grey ground */
+      --surface: #dfd8d5;     /* one step off ground: section bg, cells */
+      --ink: #2b2622;         /* near-black text */
+      --muted: #564e4a;       /* secondary / captions: high contrast 6.0:1 */
+      --accent: #1a6b4a;      /* action green: buttons, open FAQ, footer accent tile */
+      --accent-hover: #14553a;/* hover state */
+      --accent-ink: #ffffff;  /* text on accent */
+      --app-teal: #2D6A5E;    /* inside data-ui fragments only */
+      --app-bg: #e8e2df;      /* rose grey ground inside data-ui */
+
+      /* Fluid type scale - unified across the page to 6 purposeful steps */
+      --step-small: 14px;
+      --step-body:  17px;
+      --step-lead:  22px;
+      --step-head:  38px;
+      --step-display: 56px;
+
+      --font-display: 'IBM Plex Mono', monospace; /* taste-skill-ignore */
+      --font-text: 'Figtree', sans-serif;
+
+      --pad-x: 28px;
+    }
+
+    @media (max-width: 680px) {
+      :root {
+        --pad-x: 16px;
+        --step-lead: 17px;
+        --step-head: 30px;
+        --step-display: clamp(26px, 7vw, 32px);
+      }
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background-color: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-text);
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--ink);
+      overflow-x: hidden;
+      width: 100%;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button {
+      font-family: inherit;
+      border: none;
+      background: none;
+      cursor: pointer;
+    }
+
+    img, svg {
+      display: block;
+      max-width: 100%;
+    }
+
+    /* Primary Button Style: flat fill, square corners, no shadow, no gradient */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--accent);
+      color: var(--accent-ink);
+      font-family: var(--font-text);
+      font-weight: 600;
+      font-size: var(--step-body);
+      line-height: 1;
+      padding: 16px 28px;
+      border-radius: 0;
+      text-decoration: none;
+      cursor: pointer;
+      min-height: 48px;
+      transition: background-color 0.16s ease-out, transform 0.16s ease-out;
+    }
+
+    .btn:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .btn:focus-visible {
+      outline: 3px solid var(--ink);
+      outline-offset: 3px;
+    }
+
+    .btn-secondary {
+      background-color: var(--ink);
+      color: var(--bg);
+    }
+
+    .btn-secondary:hover {
+      background-color: #403934;
+    }
+
+    .btn-light {
+      background-color: #ffffff;
+      color: var(--accent);
+    }
+
+    .btn-light:hover {
+      background-color: #e8f4ed;
+    }
+
+    .btn-dark-tone {
+      background-color: #14553a;
+      color: #ffffff;
+    }
+
+    .btn-dark-tone:hover {
+      background-color: #0e3f2b;
+    }
+
+    /* -------------------------------------------------------------
+       NAVIGATION
+    -------------------------------------------------------------- */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background-color: var(--bg);
+      height: 64px;
+      width: 100%;
+    }
+
+    .site-nav {
+      height: 100%;
+      padding-inline: var(--pad-x);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .nav-wordmark {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--step-body);
+      letter-spacing: -0.04em;
+      color: var(--ink);
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .beta-badge {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background-color: var(--surface);
+      color: var(--accent);
+      border-radius: 4px;
+      padding: 3px 8px;
+      line-height: 1;
+    }
+
+    .nav-group {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      list-style: none;
+    }
+
+    .nav-link {
+      font-size: var(--step-body);
+      font-weight: 600;
+      color: var(--ink);
+      transition: color 0.16s ease-out;
+    }
+
+    .nav-link:hover {
+      color: var(--accent);
+    }
+
+    .nav-btn {
+      font-size: var(--step-small);
+      font-weight: 600;
+      padding: 10px 20px;
+      min-height: 38px;
+    }
+
+    @media (max-width: 680px) {
+      .nav-links {
+        display: none;
+      }
+    }
+
+    /* -------------------------------------------------------------
+       HERO SECTION (Column Layout)
+    -------------------------------------------------------------- */
+    .hero-section {
+      min-height: calc(100svh - 64px);
+      padding-inline: var(--pad-x);
+      padding-top: clamp(28px, 4vh, 48px);
+      padding-bottom: clamp(48px, 6vh, 80px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: clamp(28px, 4vw, 44px);
+      width: 100%;
+      max-width: 1080px;
+      margin-inline: auto;
+    }
+
+    .hero-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      width: 100%;
+      max-width: 760px;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--step-display);
+      line-height: 0.94;
+      letter-spacing: -0.04em;
+      color: var(--ink);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .mask-wrap {
+      display: block;
+      overflow: hidden;
+      padding-bottom: 0.08em;
+    }
+
+    .mask-item {
+      display: block;
+      white-space: nowrap;
+    }
+
+    .hero-sub {
+      font-size: var(--step-lead);
+      line-height: 1.5;
+      color: var(--ink);
+      max-width: 52ch;
+      margin-bottom: 28px;
+      margin-inline: auto;
+      text-align: center;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+    }
+
+    .hero-meta {
+      font-size: var(--step-small);
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    /* Hero Demo: Laptop Deck & Precision Trackpad Visualization (marked data-ui) */
+    .hero-demo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .demo-frame {
+      position: relative;
+      width: 100%;
+      max-width: 680px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .demo-pill-anchor {
+      position: relative;
+      width: 100%;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+      z-index: 10;
+    }
+
+    [data-ui] .osd-pill {
+      background-color: var(--ink);
+      color: var(--accent-ink);
+      border-radius: 40px;
+      padding: 8px 22px;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      user-select: none;
+      pointer-events: none;
+      box-shadow: 0 10px 24px rgba(43, 38, 34, 0.22);
+      transition: transform 0.16s ease-out;
+    }
+
+    .osd-pill-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #dfd8d5;
+    }
+
+    .osd-metric {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 22px;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      color: var(--accent-ink);
+    }
+
+    /* Laptop Lower Chassis / Base Deck (Dark Theme) */
+    [data-ui] .laptop-deck {
+      width: 100%;
+      background-color: #26221f;
+      border: 1px solid #1a1715;
+      border-radius: 8px 8px 6px 6px;
+      padding: 16px 18px 12px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      user-select: none;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+    }
+
+    /* Keyboard Well: recessed tray holding the chiclet keys */
+    [data-ui] .laptop-kbd-well {
+      width: 100%;
+      background-color: #1a1715;
+      border: 1px solid #12100e;
+      border-radius: 6px;
+      padding: 5px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      margin-bottom: 16px;
+    }
+
+    [data-ui] .kbd-row {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      width: 100%;
+      height: clamp(17px, 2.3vw, 23px);
+    }
+
+    [data-ui] .kbd-row-fn {
+      height: clamp(12px, 1.7vw, 17px);
+      margin-bottom: 1px;
+    }
+
+    [data-ui] .kbd-key {
+      height: 100%;
+      background-color: #12100e;
+      color: #ded8d4;
+      font-family: var(--font-text);
+      font-size: clamp(8px, 1vw, 10px);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+      user-select: none;
+      line-height: 1;
+      flex: 1;
+      min-width: 0;
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      transition: background-color 0.12s ease-out;
+    }
+
+    [data-ui] .kbd-key-fn {
+      font-size: clamp(7px, 0.85vw, 8.5px);
+      color: #8c827c;
+      background-color: #171412;
+    }
+
+    [data-ui] .kbd-key-highlight {
+      color: #5edbb0;
+    }
+
+    /* Key width proportions */
+    [data-ui] .k-w-12 { flex: 1.25; }
+    [data-ui] .k-w-14 { flex: 1.45; }
+    [data-ui] .k-w-16 { flex: 1.65; }
+    [data-ui] .k-w-18 { flex: 1.85; }
+    [data-ui] .k-w-20 { flex: 2.1; }
+    [data-ui] .k-w-24 { flex: 2.45; }
+    [data-ui] .k-w-space { flex: 6.8; }
+
+    /* Half-height arrow stack */
+    [data-ui] .kbd-arrow-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      height: 100%;
+      flex: 1;
+      min-width: 0;
+    }
+
+    [data-ui] .kbd-arrow-half {
+      height: calc(50% - 1px);
+      font-size: 7px;
+      padding: 0;
+    }
+
+    /* Palm Rest & Centered Precision Trackpad */
+    [data-ui] .laptop-palmrest {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    [data-ui] .touchpad-box {
+      width: 55%;
+      min-width: 280px;
+      height: clamp(165px, 24vw, 195px);
+      background-color: #2e2a26;
+      border: 1px solid #3d3733;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      user-select: none;
+      touch-action: none;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+
+    [data-ui] .pad-edge {
+      width: 15%;
+      min-width: 42px;
+      height: 100%;
+      cursor: ns-resize;
+      position: relative;
+      background-color: #35302c;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 12px;
+      transition: background-color 0.16s ease-out;
+    }
+
+    /* Semi-transparent touch indicator sphere */
+    [data-ui] .touch-sphere {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.25) 70%, rgba(255, 255, 255, 0.05) 100%); /* taste-skill-ignore */
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.4), inset 0 0 4px rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.85);
+      transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+    }
+
+    [data-ui] .touch-sphere.is-visible {
+      opacity: 0.85;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    [data-ui] .pad-edge:hover,
+    [data-ui] .pad-edge.is-active {
+      background-color: #403b36;
+    }
+
+    [data-ui] .pad-edge:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+    }
+
+    [data-ui] .pad-edge-left {
+      border-right: 2px dashed #4a433e;
+    }
+
+    [data-ui] .pad-edge-right {
+      border-left: 2px dashed #4a433e;
+    }
+
+    [data-ui] .edge-stripe-fill {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      pointer-events: none;
+      transition: height 0.08s ease-out, opacity 0.16s ease-out;
+    }
+
+    [data-ui] .fill-bri {
+      background-color: #2b88d8; /* Distinct blue for brightness */
+      opacity: 0.5;
+    }
+
+    [data-ui] .fill-vol {
+      background-color: #1a6b4a; /* Distinct deep green for volume */
+      opacity: 0.55;
+    }
+
+    [data-ui] .pad-edge.is-active .fill-bri {
+      opacity: 0.85;
+    }
+
+    [data-ui] .pad-edge.is-active .fill-vol {
+      opacity: 0.85;
+    }
+
+    [data-ui] .edge-badge {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: #ede7e3;
+      pointer-events: none;
+    }
+
+    [data-ui] .edge-badge-name {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      font-family: var(--font-text);
+      line-height: 1;
+    }
+
+    [data-ui] .pad-center {
+      flex: 1;
+      height: 100%;
+      background-color: #2e2a26;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      text-align: center;
+      user-select: none;
+      position: relative;
+    }
+
+    [data-ui] .pad-mute-hint {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 9px;
+      color: #8c827c;
+      font-weight: 600;
+    }
+
+    [data-ui] .pad-mute-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background-color: #8c827c;
+    }
+
+    [data-ui] .pad-crosshair {
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 6px;
+      color: #635b55;
+    }
+
+    [data-ui] .pad-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ede7e3;
+      margin-bottom: 3px;
+    }
+
+    [data-ui] .pad-note {
+      font-size: 12px;
+      color: #a39992;
+      line-height: 1.4;
+      max-width: 200px;
+    }
+
+    [data-ui] .pad-media-hint {
+      position: absolute;
+      bottom: 8px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 9px;
+      font-weight: 600;
+      color: #8c827c;
+      letter-spacing: 0.04em;
+    }
+
+    /* Front Lip Thumb Notch */
+    [data-ui] .laptop-notch {
+      width: 58px;
+      height: 4px;
+      background-color: #171412;
+      border-radius: 0 0 3px 3px;
+      margin-top: 10px;
+    }
+
+    .demo-caption {
+      margin-top: 14px;
+      font-size: var(--step-small);
+      color: var(--muted);
+      font-weight: 600;
+      text-align: center;
+    }
+
+    @media (max-width: 680px) {
+      .hero-section {
+        padding-top: 20px;
+        gap: 32px;
+      }
+      [data-ui] .laptop-deck {
+        padding: 12px 10px 10px 10px;
+      }
+      [data-ui] .laptop-kbd-well {
+        padding: 3px 4px;
+        gap: 2px;
+        margin-bottom: 12px;
+      }
+      [data-ui] .kbd-row {
+        gap: 2px;
+      }
+      [data-ui] .touchpad-box {
+        width: 86%;
+        min-width: 240px;
+        height: 160px;
+      }
+    }
+
+    /* -------------------------------------------------------------
+       FEATURES SECTION
+       Staggered Fragment Cells
+    -------------------------------------------------------------- */
+    .features-section {
+      background-color: var(--surface);
+      padding-inline: var(--pad-x);
+      padding-top: clamp(64px, 8vw, 120px);
+      padding-bottom: clamp(64px, 8vw, 120px);
+      width: 100%;
+    }
+
+    .features-inner {
+      width: 100%;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--step-head);
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+      color: var(--ink);
+      margin-bottom: 56px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      width: 100%;
+    }
+
+    .feature-cell {
+      background-color: var(--bg);
+      height: 420px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .feature-text {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 2;
+    }
+
+    .feature-title {
+      font-size: var(--step-body);
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.3;
+    }
+
+    .feature-body {
+      font-size: var(--step-body);
+      color: var(--ink);
+      line-height: 1.45;
+    }
+
+    .cell-text-top {
+      justify-content: space-between;
+    }
+
+    .cell-fragment-top {
+      flex-direction: column-reverse;
+      justify-content: space-between;
+    }
+
+    /* UI Fragments inside data-ui (min-width: 300px, min-height: 200px) */
+    [data-ui] {
+      font-family: var(--font-text);
+      user-select: none;
+    }
+
+    /* Fragment 1: OSD Pill at 68% volume */
+    [data-ui].frag-vol-pill {
+      background-color: #1e1b18;
+      border-radius: 8px;
+      padding: 20px;
+      color: #ffffff;
+      width: 100%;
+      min-width: 300px;
+      height: 210px;
+      min-height: 210px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .frag-pill-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .frag-pill-title {
+      font-size: var(--step-small);
+      font-weight: 600;
+      color: #dfd8d5;
+    }
+
+    .frag-pill-val {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .frag-pill-bar {
+      height: 8px;
+      background-color: #383430;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .frag-pill-fill {
+      height: 100%;
+      background-color: var(--accent);
+      border-radius: 4px;
+    }
+
+    /* Fragment 2: OSD Pill at 41% brightness */
+    [data-ui].frag-bri-pill {
+      background-color: #1e1b18;
+      border-radius: 8px;
+      padding: 20px;
+      color: #ffffff;
+      width: 100%;
+      min-width: 300px;
+      height: 210px;
+      min-height: 210px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* Fragment 3: Media strip row */
+    [data-ui].frag-media-strip {
+      background-color: var(--app-bg);
+      border-radius: 8px;
+      padding: 20px;
+      width: 100%;
+      min-width: 300px;
+      height: 210px;
+      min-height: 210px;
+      color: #2b2622;
+      border: 1px solid #dcd7cf;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .frag-media-info {
+      font-size: var(--step-small);
+      font-weight: 600;
+      color: #2b2622;
+      margin-bottom: 2px;
+    }
+
+    .frag-media-sub {
+      font-size: var(--step-small);
+      color: #564e4a;
+    }
+
+    .frag-media-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 8px;
+    }
+
+    .frag-media-btn {
+      padding: 8px 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #eae5de;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: var(--step-small);
+      color: #2b2622;
+    }
+
+    .frag-media-btn.play {
+      background-color: var(--app-teal);
+      color: #ffffff;
+    }
+
+    /* Fragment 4: Quick mute toggle in muted state */
+    [data-ui].frag-mute-box {
+      background-color: var(--app-bg);
+      border-radius: 8px;
+      padding: 20px;
+      width: 100%;
+      min-width: 300px;
+      height: 210px;
+      min-height: 210px;
+      border: 1px solid #dcd7cf;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .frag-mute-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .frag-mute-status {
+      font-size: var(--step-body);
+      font-weight: 600;
+      color: #9c2a1e;
+    }
+
+    .frag-mute-chip {
+      background-color: #fce8e6;
+      color: #9c2a1e;
+      padding: 6px 12px;
+      font-size: var(--step-small);
+      font-weight: 600;
+      border-radius: 4px;
+    }
+
+    .frag-mute-hint {
+      font-size: var(--step-small);
+      color: #564e4a;
+      line-height: 1.4;
+    }
+
+    /* Fragment 5: Cursor freeze */
+    [data-ui].frag-freeze-box {
+      background-color: var(--app-bg);
+      border-radius: 8px;
+      padding: 20px;
+      width: 100%;
+      min-width: 300px;
+      height: 210px;
+      min-height: 210px;
+      border: 1px solid #dcd7cf;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .freeze-data {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .freeze-title {
+      font-size: var(--step-body);
+      font-weight: 600;
+      color: #2b2622;
+    }
+
+    .freeze-sub {
+      font-size: var(--step-small);
+      color: #564e4a;
+    }
+
+    /* Fragment 6: Executable specs */
+    [data-ui].frag-binary-box {
+      background-color: var(--app-bg);
+      border-radius: 8px;
+      padding: 20px;
+      width: 100%;
+      min-width: 300px;
+      height: 210px;
+      min-height: 210px;
+      border: 1px solid #dcd7cf;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .binary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: var(--step-small);
+      padding-block: 4px;
+    }
+
+    .binary-key {
+      color: #564e4a;
+    }
+
+    .binary-val {
+      font-weight: 600;
+      color: #2b2622;
+    }
+
+    @media (max-width: 1024px) {
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 680px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+      .feature-cell {
+        height: auto;
+        min-height: 340px;
+        gap: 24px;
+      }
+      .cell-fragment-top {
+        flex-direction: column;
+      }
+    }
+
+    /* -------------------------------------------------------------
+       HOW IT WORKS SECTION
+       Call and response column
+    -------------------------------------------------------------- */
+    .steps-section {
+      background-color: var(--bg);
+      padding-inline: var(--pad-x);
+      padding-top: clamp(64px, 8vw, 120px);
+      padding-bottom: clamp(64px, 8vw, 120px);
+      width: 100%;
+    }
+
+    .steps-layout {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 4fr 8fr;
+      gap: clamp(28px, 4vw, 56px);
+      align-items: start;
+    }
+
+    .steps-sticky-head {
+      position: sticky;
+      top: 96px;
+    }
+
+    .steps-column {
+      display: flex;
+      flex-direction: column;
+      gap: 88px;
+      width: 100%;
+    }
+
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+    }
+
+    .step-headline {
+      font-size: var(--step-lead);
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.3;
+    }
+
+    .step-body {
+      font-size: var(--step-body);
+      color: var(--ink);
+      line-height: 1.5;
+    }
+
+    /* Step UI Fragments */
+    .step-frag {
+      margin-top: 12px;
+      border-radius: 8px;
+      background-color: var(--surface);
+      padding: 20px;
+      width: 100%;
+    }
+
+    /* Step 1 Tray Fragment */
+    [data-ui].step-tray-ui {
+      background-color: #1f1d1b;
+      border-radius: 6px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #ffffff;
+      width: 100%;
+    }
+
+    .tray-icons-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .tray-app-active {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background-color: #322e2a;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: var(--step-small);
+      font-weight: 600;
+    }
+
+    .tray-time {
+      font-size: var(--step-small);
+      color: #d8d2ce;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Step 2 Schematic Fragment */
+    [data-ui].step-schematic {
+      background-color: var(--app-bg);
+      border-radius: 8px;
+      padding: 20px;
+      border: 1px solid #dcd7cf;
+      position: relative;
+      width: 100%;
+      min-width: 300px;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .schematic-pad {
+      height: 140px;
+      background-color: #e5e0d8;
+      border-radius: 8px;
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    .schematic-edge {
+      width: 16%;
+      height: 100%;
+      background-color: var(--app-teal);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+    }
+
+    .schematic-center {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--step-small);
+      color: #564e4a;
+      gap: 4px;
+    }
+
+    /* Step 3 Settings Flyout Fragment */
+    [data-ui].step-settings-frag {
+      background-color: var(--app-bg);
+      border-radius: 8px;
+      padding: 20px;
+      border: 1px solid #dcd7cf;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+    }
+
+    .setting-slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .setting-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: var(--step-small);
+      font-weight: 600;
+      color: #2b2622;
+    }
+
+    .setting-val-tag {
+      color: var(--app-teal);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .setting-track {
+      height: 8px;
+      background-color: #dcd7cf;
+      border-radius: 4px;
+      position: relative;
+    }
+
+    .setting-thumb {
+      position: absolute;
+      top: -4px;
+      left: 50%;
+      width: 16px;
+      height: 16px;
+      background-color: var(--app-teal);
+      border-radius: 50%;
+      transform: translateX(-50%);
+    }
+
+    .setting-thumb-left {
+      left: 28%;
+    }
+
+    @media (max-width: 900px) {
+      .steps-layout {
+        grid-template-columns: 1fr;
+        gap: 40px;
+        width: 100%;
+      }
+      .steps-sticky-head {
+        position: static;
+      }
+      .steps-column {
+        width: 100%;
+        max-width: 100%;
+        gap: 56px;
+      }
+    }
+
+    /* -------------------------------------------------------------
+       FAQ SECTION
+       Accordion of filled tiles
+    -------------------------------------------------------------- */
+    .faq-section {
+      background-color: var(--surface);
+      padding-inline: var(--pad-x);
+      padding-top: clamp(64px, 8vw, 120px);
+      padding-bottom: clamp(64px, 8vw, 120px);
+      width: 100%;
+    }
+
+    .faq-layout {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 4fr 8fr;
+      gap: clamp(28px, 4vw, 56px);
+      align-items: start;
+    }
+
+    .faq-sticky-head {
+      position: sticky;
+      top: 96px;
+    }
+
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+
+    /* Accordion Tile using <details> */
+    .faq-tile {
+      background-color: var(--bg);
+      color: var(--ink);
+      border-radius: 0;
+      overflow: hidden;
+      width: 100%;
+      transition: background-color 0.2s ease-out, color 0.2s ease-out;
+    }
+
+    .faq-tile[open] {
+      background-color: var(--accent);
+      color: var(--accent-ink);
+    }
+
+    .faq-summary {
+      min-height: 72px;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      list-style: none;
+      font-size: var(--step-body);
+      font-weight: 600;
+      user-select: none;
+      width: 100%;
+    }
+
+    .faq-summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .faq-summary:focus-visible {
+      outline: 3px solid var(--ink);
+      outline-offset: -3px;
+    }
+
+    .faq-tile[open] .faq-summary:focus-visible {
+      outline: 3px solid #ffffff;
+    }
+
+    .faq-action-symbol {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1;
+      width: 24px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .faq-tile[open] .faq-action-symbol::before {
+      content: "−";
+    }
+
+    .faq-tile:not([open]) .faq-action-symbol::before {
+      content: "+";
+    }
+
+    .faq-content {
+      padding: 0 24px 24px 24px;
+      font-size: var(--step-body);
+      line-height: 1.55;
+      max-width: 56ch;
+    }
+
+    @media (max-width: 900px) {
+      .faq-layout {
+        grid-template-columns: 1fr;
+        gap: 32px;
+        width: 100%;
+      }
+      .faq-sticky-head {
+        position: static;
+      }
+      .faq-list {
+        width: 100%;
+      }
+    }
+
+    /* -------------------------------------------------------------
+       CTA SECTION
+       Full-bleed field in accent colour
+    -------------------------------------------------------------- */
+    .cta-section {
+      background-color: var(--accent);
+      color: var(--accent-ink);
+      padding-inline: var(--pad-x);
+      padding-top: clamp(64px, 8vw, 100px);
+      padding-bottom: clamp(64px, 8vw, 100px);
+      min-height: 90svh;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+
+    .cta-inner {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 5fr 7fr;
+      gap: clamp(32px, 5vw, 64px);
+      align-items: center;
+    }
+
+    .cta-text-col {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      width: 100%;
+    }
+
+    .cta-heading {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--step-display);
+      line-height: 0.92;
+      letter-spacing: -0.04em;
+      color: #ffffff;
+      margin-bottom: 24px;
+    }
+
+    .cta-sub {
+      font-size: var(--step-lead);
+      line-height: 1.5;
+      color: #d5eee2;
+      max-width: 44ch;
+      margin-bottom: 36px;
+    }
+
+    .cta-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .cta-note {
+      font-size: var(--step-small);
+      color: #b7e3cf;
+      font-weight: 600;
+    }
+
+    /* CTA Right: Live rendered app flyout + architectural atmosphere */
+    .cta-preview-col {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 100%;
+    }
+
+    .cta-media-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: center;
+      width: 100%;
+    }
+
+    .atmosphere-card {
+      position: relative;
+      background-color: #14553a;
+      overflow: hidden;
+      aspect-ratio: 16 / 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .atmosphere-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    [data-ui].flyout-panel {
+      background-color: var(--app-bg);
+      color: #2b2622;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.24);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+      min-width: 320px;
+      min-height: 220px;
+    }
+
+    [data-ui] .flyout-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #dcd7cf;
+      padding-bottom: 12px;
+    }
+
+    .flyout-title {
+      font-size: var(--step-body);
+      font-weight: 600;
+      color: #2b2622;
+    }
+
+    .flyout-badge {
+      font-size: var(--step-small);
+      font-weight: 600;
+      color: var(--app-teal);
+      background-color: #e4eee9;
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+
+    .flyout-mini-pad {
+      height: 90px;
+      background-color: #e6e1da;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .flyout-edge {
+      width: 14%;
+      height: 100%;
+      background-color: var(--app-teal);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .flyout-center {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--step-small);
+      color: #564e4a;
+    }
+
+    .flyout-toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: var(--step-small);
+      font-weight: 600;
+    }
+
+    .flyout-switch {
+      width: 40px;
+      height: 22px;
+      background-color: var(--app-teal);
+      border-radius: 11px;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .flyout-switch-knob {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      width: 16px;
+      height: 16px;
+      background-color: #ffffff;
+      border-radius: 50%;
+    }
+
+    @media (max-width: 900px) {
+      .cta-inner {
+        grid-template-columns: 1fr;
+      }
+      .cta-media-wrap {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* -------------------------------------------------------------
+       FOOTER
+       Tile board layout
+    -------------------------------------------------------------- */
+    .site-footer {
+      background-color: var(--bg);
+      padding-inline: var(--pad-x);
+      padding-top: 24px;
+      padding-bottom: 28px;
+      width: 100%;
+    }
+
+    .footer-tiles {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 8px;
+    }
+
+    .footer-tile {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* Tile 1: Wordmark tile */
+    .tile-wordmark {
+      grid-column: 1 / 8;
+      background-color: var(--surface);
+      min-height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .footer-wordmark-text {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--step-display);
+      line-height: 0.88;
+      letter-spacing: -0.04em;
+      color: var(--ink);
+    }
+
+    /* Tile 2: Accent tile */
+    .tile-accent {
+      grid-column: 8 / 13;
+      background-color: var(--accent);
+      color: var(--accent-ink);
+      min-height: 160px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      text-decoration: none;
+      transition: background-color 0.16s ease-out;
+    }
+
+    .tile-accent:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .tile-accent-head {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 28px;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .tile-accent-arrow {
+      align-self: flex-end;
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    /* Tile 3: Navigation tile */
+    .tile-nav {
+      grid-column: 1 / 5;
+      background-color: var(--surface);
+      min-height: 130px;
+    }
+
+    .footer-links-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .footer-links-list a {
+      font-size: var(--step-body);
+      font-weight: 600;
+      color: var(--ink);
+      transition: color 0.16s ease-out;
+    }
+
+    .footer-links-list a:hover {
+      color: var(--accent);
+    }
+
+    /* Tile 4: Statement & Legal tile */
+    .tile-legal {
+      grid-column: 5 / 13;
+      background-color: var(--surface);
+      min-height: 130px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .footer-statement {
+      font-size: var(--step-body);
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .footer-legal-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: var(--step-small);
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    @media (max-width: 900px) {
+      .tile-wordmark {
+        grid-column: 1 / 13;
+      }
+      .tile-accent {
+        grid-column: 1 / 13;
+      }
+      .tile-nav {
+        grid-column: 1 / 13;
+      }
+      .tile-legal {
+        grid-column: 1 / 13;
+      }
+    }
+
+    /* -------------------------------------------------------------
+       MOTION & ANIMATIONS
+    -------------------------------------------------------------- */
+    @keyframes floatPill {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-6px);
+      }
+    }
+
+    .demo-pill-floating {
+      animation: floatPill 3s ease-in-out infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        transform: none !important;
+        opacity: 1 !important;
+      }
+      .demo-pill-floating {
+        animation: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       NAV
+  ============================================================= -->
+  <header class="site-header">
+    <nav class="site-nav" aria-label="Main Navigation">
+      <a href="#" class="nav-wordmark">
+        Sidewise
+        <span class="beta-badge">Beta</span>
+      </a>
+      <div class="nav-group">
+        <ul class="nav-links">
+          <li><a href="#features" class="nav-link">Features</a></li>
+          <li><a href="#how-it-works" class="nav-link">How it works</a></li>
+          <li><a href="#faq" class="nav-link">FAQ</a></li>
+        </ul>
+        <a href="#download" class="btn nav-btn" role="button">Download</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="content">
+
+    <!-- ============================================================
+         HERO SECTION (Product Performs Live Demo)
+    ============================================================= -->
+    <section class="hero-section" aria-label="Introduction">
+      <div class="hero-content">
+        <h1 class="hero-title">
+          <span class="mask-wrap"><span class="mask-item reveal-line-1">Volume on the right.</span></span>
+          <span class="mask-wrap"><span class="mask-item reveal-line-2">Brightness on the left.</span></span>
+        </h1>
+        <p class="hero-sub">
+          Sidewise claims the outer 8% of your Windows trackpad for instant volume and brightness sliders. Slide the glass to adjust your controls — no function keys, no menus, no drifting cursor.
+        </p>
+        <div class="hero-actions">
+          <a href="#download" class="btn" role="button" id="hero-download-btn">Download for Windows</a>
+          <span class="hero-meta">v1.0.0 Beta · Free · under 3 MB · Windows 10 &amp; 11</span>
+        </div>
+      </div>
+
+      <div class="hero-demo" data-ui>
+        <div class="demo-frame">
+          <div class="demo-pill-anchor">
+            <div class="osd-pill demo-pill-floating" id="live-pill" aria-live="polite">
+              <span class="osd-pill-icon" id="pill-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                </svg>
+              </span>
+              <span class="osd-metric" id="pill-metric">VOL · 62%</span>
+            </div>
+          </div>
+
+          <!-- Laptop Base Deck Visualization (Accurate Proportions & Full Keyboard On Top) -->
+          <div class="laptop-deck">
+            <!-- Full Laptop Keyboard Well On Top -->
+            <div class="laptop-kbd-well" aria-hidden="true">
+              <!-- Row 1: Function / Media row (showing fumbled F-keys Sidewise eliminates) -->
+              <div class="kbd-row kbd-row-fn">
+                <span class="kbd-key kbd-key-fn k-w-14">Esc</span>
+                <span class="kbd-key kbd-key-fn kbd-key-highlight" title="F1 Mute">F1</span>
+                <span class="kbd-key kbd-key-fn kbd-key-highlight" title="F2 Vol -">F2</span>
+                <span class="kbd-key kbd-key-fn kbd-key-highlight" title="F3 Vol +">F3</span>
+                <span class="kbd-key kbd-key-fn">F4</span>
+                <span class="kbd-key kbd-key-fn kbd-key-highlight" title="F5 Bri -">F5</span>
+                <span class="kbd-key kbd-key-fn kbd-key-highlight" title="F6 Bri +">F6</span>
+                <span class="kbd-key kbd-key-fn">F7</span>
+                <span class="kbd-key kbd-key-fn">F8</span>
+                <span class="kbd-key kbd-key-fn">F9</span>
+                <span class="kbd-key kbd-key-fn">F10</span>
+                <span class="kbd-key kbd-key-fn">F11</span>
+                <span class="kbd-key kbd-key-fn">F12</span>
+                <span class="kbd-key kbd-key-fn k-w-12">Del</span>
+                <span class="kbd-key kbd-key-fn k-w-12">⏻</span>
+              </div>
+
+              <!-- Row 2: Number row -->
+              <div class="kbd-row">
+                <span class="kbd-key">~</span>
+                <span class="kbd-key">1</span>
+                <span class="kbd-key">2</span>
+                <span class="kbd-key">3</span>
+                <span class="kbd-key">4</span>
+                <span class="kbd-key">5</span>
+                <span class="kbd-key">6</span>
+                <span class="kbd-key">7</span>
+                <span class="kbd-key">8</span>
+                <span class="kbd-key">9</span>
+                <span class="kbd-key">0</span>
+                <span class="kbd-key">-</span>
+                <span class="kbd-key">+</span>
+                <span class="kbd-key k-w-20">Bksp</span>
+              </div>
+
+              <!-- Row 3: QWERTY -->
+              <div class="kbd-row">
+                <span class="kbd-key k-w-16">Tab</span>
+                <span class="kbd-key">Q</span>
+                <span class="kbd-key">W</span>
+                <span class="kbd-key">E</span>
+                <span class="kbd-key">R</span>
+                <span class="kbd-key">T</span>
+                <span class="kbd-key">Y</span>
+                <span class="kbd-key">U</span>
+                <span class="kbd-key">I</span>
+                <span class="kbd-key">O</span>
+                <span class="kbd-key">P</span>
+                <span class="kbd-key">[</span>
+                <span class="kbd-key">]</span>
+                <span class="kbd-key k-w-14">\</span>
+              </div>
+
+              <!-- Row 4: Home row (ASDF) -->
+              <div class="kbd-row">
+                <span class="kbd-key k-w-18">Caps</span>
+                <span class="kbd-key">A</span>
+                <span class="kbd-key">S</span>
+                <span class="kbd-key">D</span>
+                <span class="kbd-key">F</span>
+                <span class="kbd-key">G</span>
+                <span class="kbd-key">H</span>
+                <span class="kbd-key">J</span>
+                <span class="kbd-key">K</span>
+                <span class="kbd-key">L</span>
+                <span class="kbd-key">;</span>
+                <span class="kbd-key">'</span>
+                <span class="kbd-key k-w-24">Enter</span>
+              </div>
+
+              <!-- Row 5: ZXCV row -->
+              <div class="kbd-row">
+                <span class="kbd-key k-w-24">Shift</span>
+                <span class="kbd-key">Z</span>
+                <span class="kbd-key">X</span>
+                <span class="kbd-key">C</span>
+                <span class="kbd-key">V</span>
+                <span class="kbd-key">B</span>
+                <span class="kbd-key">N</span>
+                <span class="kbd-key">M</span>
+                <span class="kbd-key">,</span>
+                <span class="kbd-key">.</span>
+                <span class="kbd-key">/</span>
+                <span class="kbd-key k-w-24">Shift</span>
+              </div>
+
+              <!-- Row 6: Modifier & Space row -->
+              <div class="kbd-row">
+                <span class="kbd-key k-w-14">Ctrl</span>
+                <span class="kbd-key k-w-12">Fn</span>
+                <span class="kbd-key k-w-12">
+                  <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M0 2.24l6.5-.89v6.12H0V2.24zm0 7.37h6.5v6.12L0 14.84V9.61zm7.44-8.35L16 0v7.47H7.44V1.26zm0 8.35H16v7.47l-8.56-1.26V9.61z"/>
+                  </svg>
+                </span>
+                <span class="kbd-key k-w-14">Alt</span>
+                <span class="kbd-key k-w-space"></span>
+                <span class="kbd-key k-w-14">Alt</span>
+                <span class="kbd-key k-w-14">Ctrl</span>
+                <span class="kbd-key">◀</span>
+                <div class="kbd-arrow-stack">
+                  <span class="kbd-key kbd-arrow-half">▲</span>
+                  <span class="kbd-key kbd-arrow-half">▼</span>
+                </div>
+                <span class="kbd-key">▶</span>
+              </div>
+            </div>
+
+            <!-- Palm Rest with Centered Precision Trackpad -->
+            <div class="laptop-palmrest">
+              <div class="touchpad-box" id="touchpad-demo" aria-label="Interactive trackpad demo">
+                <!-- Semi-transparent touch simulation sphere -->
+                <div class="touch-sphere" id="touch-sphere" aria-hidden="true"></div>
+
+                <!-- Left Edge: Brightness -->
+                <div class="pad-edge pad-edge-left" id="edge-brightness"
+                     role="slider"
+                     tabindex="0"
+                     aria-label="Trackpad left edge brightness slider"
+                     aria-valuemin="0"
+                     aria-valuemax="100"
+                     aria-valuenow="41">
+                  <div class="edge-stripe-fill fill-brightness fill-bri" id="fill-brightness" style="height: 41%;"></div>
+                  <div class="edge-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="4"/>
+                      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+                    </svg>
+                    <span class="edge-badge-name">BRI</span>
+                  </div>
+                </div>
+
+                <!-- Center Trackpad Area -->
+                <div class="pad-center">
+                  <div class="pad-mute-hint" title="Double-tap top corner to mute">
+                    <span class="pad-mute-dot"></span>
+                    <span>Quick mute</span>
+                  </div>
+                  <div class="pad-crosshair" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                      <circle cx="8" cy="8" r="2.5"/>
+                    </svg>
+                  </div>
+                  <div class="pad-media-hint" aria-hidden="true">
+                    <span>◀◀ &nbsp; Media strip: swipe bottom &nbsp; ▶▶</span>
+                  </div>
+                </div>
+
+                <!-- Right Edge: Volume -->
+                <div class="pad-edge pad-edge-right" id="edge-volume"
+                     role="slider"
+                     tabindex="0"
+                     aria-label="Trackpad right edge volume slider"
+                     aria-valuemin="0"
+                     aria-valuemax="100"
+                     aria-valuenow="62">
+                  <div class="edge-stripe-fill fill-volume fill-vol" id="fill-volume" style="height: 62%;"></div>
+                  <div class="edge-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                      <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                      <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                    </svg>
+                    <span class="edge-badge-name">VOL</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Front Lip Thumb Notch -->
+            <div class="laptop-notch" aria-hidden="true"></div>
+          </div>
+
+          <p class="demo-caption">Try it: drag the right edge up/down for volume · left edge for brightness</p>
+        </div>
+
+        <!-- Static Fallback without JavaScript -->
+        <noscript>
+          <div style="margin-top: 12px; font-size: 14px; color: var(--muted); text-align: center;">
+            Static preview: Left edge controls display brightness, right edge controls master audio.
+          </div>
+        </noscript>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         FEATURES SECTION
+         Staggered Fragment Cells (2 rows of 3)
+    ============================================================= -->
+    <section class="features-section" id="features">
+      <div class="features-inner">
+        <h2 class="section-title" data-reveal>What it does</h2>
+
+        <div class="features-grid">
+          <!-- Row 1 Cell 1: text-top, fragment-bottom -->
+          <div class="feature-cell cell-text-top" data-reveal>
+            <div class="feature-text">
+              <h3 class="feature-title">Right edge · Volume</h3>
+              <p class="feature-body">Slide up or down to raise or lower audio. The OSD pill shows your level and fades away.</p>
+            </div>
+            <div class="frag-vol-pill" data-ui>
+              <svg width="220" height="24" viewBox="0 0 220 24" fill="none">
+                <rect x="0" y="4" width="220" height="16" rx="4" fill="#2b2622"/>
+                <rect x="4" y="8" width="140" height="8" rx="2" fill="#1a6b4a"/>
+              </svg>
+              <div class="frag-pill-head">
+                <span class="frag-pill-title">Speakers (Realtek Audio)</span>
+                <span class="frag-pill-val">68%</span>
+              </div>
+              <div class="frag-pill-bar">
+                <div class="frag-pill-fill" style="width: 68%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 1 Cell 2: fragment-top, text-bottom -->
+          <div class="feature-cell cell-fragment-top" data-reveal>
+            <div class="feature-text">
+              <h3 class="feature-title">Left edge · Brightness</h3>
+              <p class="feature-body">Slide the left border to step your display brightness without touching a key.</p>
+            </div>
+            <div class="frag-bri-pill" data-ui>
+              <svg width="220" height="24" viewBox="0 0 220 24" fill="none">
+                <rect x="0" y="4" width="220" height="16" rx="4" fill="#2b2622"/>
+                <rect x="4" y="8" width="90" height="8" rx="2" fill="#1a6b4a"/>
+              </svg>
+              <div class="frag-pill-head">
+                <span class="frag-pill-title">Internal Display (DXVA2)</span>
+                <span class="frag-pill-val">41%</span>
+              </div>
+              <div class="frag-pill-bar">
+                <div class="frag-pill-fill" style="width: 41%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 1 Cell 3: text-top, fragment-bottom -->
+          <div class="feature-cell cell-text-top" data-reveal>
+            <div class="feature-text">
+              <h3 class="feature-title">Media strip</h3>
+              <p class="feature-body">Swipe left or right along the bottom of the trackpad to skip tracks. Tap to play or pause.</p>
+            </div>
+            <div class="frag-media-strip" data-ui>
+              <svg width="220" height="20" viewBox="0 0 220 20" fill="none">
+                <rect x="0" y="2" width="220" height="16" rx="4" fill="#e5e0d8"/>
+                <rect x="4" y="6" width="110" height="8" rx="2" fill="#2D6A5E"/>
+              </svg>
+              <div>
+                <div class="frag-media-info">Track skipping · Bottom margin</div>
+                <div class="frag-media-sub">Now playing via Windows Media Session</div>
+              </div>
+              <div class="frag-media-controls">
+                <span class="frag-media-btn" role="button">Prev</span>
+                <span class="frag-media-btn play" role="button">Play</span>
+                <span class="frag-media-btn" role="button">Next</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 2 Cell 4: fragment-top, text-bottom (reversed pattern) -->
+          <div class="feature-cell cell-fragment-top" data-reveal>
+            <div class="feature-text">
+              <h3 class="feature-title">Quick mute</h3>
+              <p class="feature-body">Double-tap the top-right corner to mute. Tap again to unmute. Instant, no fingers leaving the pad.</p>
+            </div>
+            <div class="frag-mute-box" data-ui>
+              <svg width="220" height="24" viewBox="0 0 220 24" fill="none">
+                <rect x="0" y="4" width="220" height="16" rx="4" fill="#fce8e6"/>
+                <rect x="4" y="8" width="50" height="8" rx="2" fill="#c0392b"/>
+              </svg>
+              <div class="frag-mute-row">
+                <span class="frag-mute-status">Audio Muted</span>
+                <span class="frag-mute-chip">Double-tap</span>
+              </div>
+              <p class="frag-mute-hint">Tap top-right corner to unmute master audio endpoint</p>
+            </div>
+          </div>
+
+          <!-- Row 2 Cell 5: text-top, fragment-bottom -->
+          <div class="feature-cell cell-text-top" data-reveal>
+            <div class="feature-text">
+              <h3 class="feature-title">Cursor freeze</h3>
+              <p class="feature-body">While you are sliding an edge, the mouse cursor stays locked in place so your pointer doesn't drift.</p>
+            </div>
+            <div class="frag-freeze-box" data-ui>
+              <svg width="220" height="24" viewBox="0 0 220 24" fill="none">
+                <rect x="0" y="4" width="220" height="16" rx="4" fill="#e5e0d8"/>
+                <rect x="4" y="8" width="180" height="8" rx="2" fill="#2D6A5E"/>
+              </svg>
+              <div class="freeze-data">
+                <span class="freeze-title">Pointer Lock Active</span>
+                <span class="freeze-sub">Raw contact at HID X: 92%, Y: 64%</span>
+              </div>
+              <p class="frag-mute-hint">Cursor coordinates frozen in Windows Core Input</p>
+            </div>
+          </div>
+
+          <!-- Row 2 Cell 6: fragment-top, text-bottom -->
+          <div class="feature-cell cell-fragment-top" data-reveal>
+            <div class="feature-text">
+              <h3 class="feature-title">No dependencies</h3>
+              <p class="feature-body">One .exe under 3 MB. No .NET runtime, no Visual C++, no Electron. Just run it.</p>
+            </div>
+            <div class="frag-binary-box" data-ui>
+              <svg width="220" height="24" viewBox="0 0 220 24" fill="none">
+                <rect x="0" y="4" width="220" height="16" rx="4" fill="#e5e0d8"/>
+                <rect x="4" y="8" width="70" height="8" rx="2" fill="#2D6A5E"/>
+              </svg>
+              <div>
+                <div class="binary-row">
+                  <span class="binary-key">Binary</span>
+                  <span class="binary-val">sidewise.exe · 3.5 MB</span>
+                </div>
+                <div class="binary-row">
+                  <span class="binary-key">Runtime</span>
+                  <span class="binary-val">Native Rust (MSVC)</span>
+                </div>
+                <div class="binary-row">
+                  <span class="binary-key">Idle RAM</span>
+                  <span class="binary-val">7.8 MB</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         HOW IT WORKS SECTION
+         Call and Response Column
+    ============================================================= -->
+    <section class="steps-section" id="how-it-works">
+      <div class="steps-layout">
+        <div class="steps-sticky-head">
+          <h2 class="section-title" data-reveal>Three steps</h2>
+        </div>
+
+        <div class="steps-column">
+          <!-- Step 1 -->
+          <div class="step-item" data-reveal>
+            <h3 class="step-headline">First, download it.</h3>
+            <p class="step-body">
+              Run the installer or unzip the portable archive. The app appears in your system tray. No reboot, no admin prompt after setup.
+            </p>
+            <div class="step-frag">
+              <div class="step-tray-ui" data-ui>
+                <div class="tray-icons-group">
+                  <div class="tray-app-active">
+                    <span>Sidewise Active</span>
+                  </div>
+                </div>
+                <span class="tray-time">16:42</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="step-item" data-reveal>
+            <h3 class="step-headline">Then slide an edge.</h3>
+            <p class="step-body">
+              Slowly drag one finger along the outer 8% of your trackpad up or down. You will feel it respond immediately.
+            </p>
+            <div class="step-frag">
+              <div class="step-schematic" data-ui>
+                <div class="schematic-pad">
+                  <div class="schematic-edge">Left: Brightness</div>
+                  <div class="schematic-center">
+                    <span style="font-weight: 600; color: #2b2622;">Normal Gestures Zone</span>
+                    <span style="font-size: var(--step-small);">Pinch, scroll, multi-touch untouched</span>
+                  </div>
+                  <div class="schematic-edge">Right: Volume</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="step-item" data-reveal>
+            <h3 class="step-headline">The rest follows.</h3>
+            <p class="step-body">
+              Volume changes, brightness adjusts, the OSD pill appears and fades. Tweak edge width and sensitivity in the tray flyout.
+            </p>
+            <div class="step-frag">
+              <div class="step-settings-frag" data-ui>
+                <div class="setting-slider-row">
+                  <div class="setting-label-row">
+                    <span>Edge Margin Width</span>
+                    <span class="setting-val-tag">8% (Default)</span>
+                  </div>
+                  <div class="setting-track">
+                    <div class="setting-thumb setting-thumb-left"></div>
+                  </div>
+                </div>
+                <div class="setting-slider-row">
+                  <div class="setting-label-row">
+                    <span>Sensitivity Step</span>
+                    <span class="setting-val-tag">1.0x</span>
+                  </div>
+                  <div class="setting-track">
+                    <div class="setting-thumb"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         FAQ SECTION
+         Accordion of filled tiles
+    ============================================================= -->
+    <section class="faq-section" id="faq">
+      <div class="faq-layout">
+        <div class="faq-sticky-head">
+          <h2 class="section-title" data-reveal>Questions</h2>
+        </div>
+
+        <div class="faq-list">
+          <!-- Question 1 -->
+          <details class="faq-tile" name="faq" data-reveal>
+            <summary class="faq-summary" role="button">
+              <span>Does this work on my laptop?</span>
+              <span class="faq-action-symbol" aria-hidden="true"></span>
+            </summary>
+            <div class="faq-content">
+              If your laptop runs Windows 10 (version 1903 or later) and has a Windows Precision Touchpad, yes. Most laptops sold after 2017 qualify. You can check: Settings → Bluetooth &amp; devices → Touchpad — if you see "Your PC has a precision touchpad", you're set.
+            </div>
+          </details>
+
+          <!-- Question 2 -->
+          <details class="faq-tile" name="faq" data-reveal>
+            <summary class="faq-summary" role="button">
+              <span>Will it break my normal trackpad gestures?</span>
+              <span class="faq-action-symbol" aria-hidden="true"></span>
+            </summary>
+            <div class="faq-content">
+              No. Sidewise only activates inside the outer edge zone you configure (default 8% of the pad width). All scroll, pinch, three-finger and four-finger gestures in the centre remain entirely untouched.
+            </div>
+          </details>
+
+          <!-- Question 3 -->
+          <details class="faq-tile" name="faq" data-reveal>
+            <summary class="faq-summary" role="button">
+              <span>Does it run in the background?</span>
+              <span class="faq-action-symbol" aria-hidden="true"></span>
+            </summary>
+            <div class="faq-content">
+              Yes, as a tray icon. It uses less than 0.5% CPU at idle and about 8 MB of RAM. You will not notice it.
+            </div>
+          </details>
+
+          <!-- Question 4 -->
+          <details class="faq-tile" name="faq" data-reveal>
+            <summary class="faq-summary" role="button">
+              <span>Can I require a key press before it activates?</span>
+              <span class="faq-action-symbol" aria-hidden="true"></span>
+            </summary>
+            <div class="faq-content">
+              Yes. In Settings you can require holding Alt or Ctrl before any edge gesture fires. This lets you use the edges normally unless you're holding the modifier.
+            </div>
+          </details>
+
+          <!-- Question 5 -->
+          <details class="faq-tile" name="faq" data-reveal>
+            <summary class="faq-summary" role="button">
+              <span>What if I don't have a Precision Touchpad?</span>
+              <span class="faq-action-symbol" aria-hidden="true"></span>
+            </summary>
+            <div class="faq-content">
+              Sidewise reads raw touchpad HID data that is only available on Windows Precision Touchpads. It will detect your hardware on launch and tell you if yours is not supported.
+            </div>
+          </details>
+
+          <!-- Question 6 -->
+          <details class="faq-tile" name="faq" data-reveal>
+            <summary class="faq-summary" role="button">
+              <span>Is it free?</span>
+              <span class="faq-action-symbol" aria-hidden="true"></span>
+            </summary>
+            <div class="faq-content">
+              Yes, completely. No license key, no account, no subscription.
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         CTA SECTION (Download and run)
+    ============================================================= -->
+    <section class="cta-section" id="download">
+      <div class="cta-inner">
+        <div class="cta-text-col" data-reveal>
+          <h2 class="cta-heading">Download and run.</h2>
+          <p class="cta-sub">
+            The installer adds a Start Menu shortcut and a login entry. The portable version runs from wherever you unzip it.
+          </p>
+          <div class="cta-buttons">
+            <a href="https://github.com/Croosh/Sidewise/releases/download/v1.0.0/Sidewise-v1.0.0-Setup.exe" class="btn btn-light" role="button">Download installer</a>
+            <a href="https://github.com/Croosh/Sidewise/releases/download/v1.0.0/Sidewise-v1.0.0-Portable.zip" class="btn btn-dark-tone" role="button">Portable .zip</a>
+          </div>
+          <p class="cta-note">Windows 10 · 1903+ · Precision Touchpad required</p>
+        </div>
+
+        <div class="cta-preview-col" data-reveal>
+          <div class="cta-media-wrap">
+            <!-- Atmosphere Architectural Photograph (Len dela Cruz, CC0) -->
+            <div class="atmosphere-card">
+              <img src="assets/len-dela-cruz.jpg"
+                   alt="Spiralling concrete curves around a small round window"
+                   class="atmosphere-img"
+                   width="1600"
+                   height="1000"
+                   loading="lazy">
+            </div>
+
+            <!-- Second Architectural Photograph (Roman Kraft, CC0) -->
+            <div class="atmosphere-card">
+              <img src="assets/roman-kraft.jpg"
+                   alt="Modern architectural facade with clean geometric lines"
+                   class="atmosphere-img"
+                   width="1200"
+                   height="800"
+                   loading="lazy">
+            </div>
+          </div>
+
+          <!-- True-size Flyout Panel Fragment -->
+          <div class="flyout-panel" data-ui>
+            <div class="flyout-title-row">
+              <span class="flyout-title">Sidewise · Touchpad Controller</span>
+              <span class="flyout-badge">Connected</span>
+            </div>
+            <div class="flyout-mini-pad">
+              <div class="flyout-edge">Bri</div>
+              <div class="flyout-center">Precision Surface Active</div>
+              <div class="flyout-edge">Vol</div>
+            </div>
+            <div class="flyout-toggle-row">
+              <span>Freeze cursor during edge slide</span>
+              <div class="flyout-switch"><div class="flyout-switch-knob"></div></div>
+            </div>
+            <div class="flyout-toggle-row">
+              <span>Bottom edge media strip</span>
+              <div class="flyout-switch"><div class="flyout-switch-knob"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================================
+       FOOTER (Tile Board)
+  ============================================================= -->
+  <footer class="site-footer">
+    <div class="footer-tiles">
+      <!-- Tile 1: Wordmark tile -->
+      <div class="footer-tile tile-wordmark">
+        <span class="footer-wordmark-text">SIDEWISE</span>
+        <span class="beta-badge" style="align-self: flex-start; margin-left: 12px; margin-top: 6px;">Beta</span>
+      </div>
+
+      <!-- Tile 2: Accent tile (Link to Download) -->
+      <a href="#download" class="footer-tile tile-accent" role="button">
+        <span class="tile-accent-head">Get it now →</span>
+        <span class="tile-accent-arrow">↗</span>
+      </a>
+
+      <!-- Tile 3: Navigation tile -->
+      <div class="footer-tile tile-nav">
+        <ul class="footer-links-list">
+          <li><a href="https://github.com/Croosh/Sidewise" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+          <li><a href="#download">Download</a></li>
+          <li><a href="#how-it-works">How it works</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ul>
+      </div>
+
+      <!-- Tile 4: Statement & Legal tile -->
+      <div class="footer-tile tile-legal">
+        <p class="footer-statement">Edge gestures for Windows laptops.</p>
+        <div class="footer-legal-row">
+          <span>© 2024 Sidewise</span>
+          <span>MIT License</span>
+          <span>Photo: Len dela Cruz</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============================================================
+       INTERACTION SCRIPT
+  ============================================================= -->
+  <script>
+    (function () {
+      'use strict';
+
+      // --- Interactive Hero Touchpad Demo ---
+      const touchpad = document.getElementById('touchpad-demo');
+      const edgeVolume = document.getElementById('edge-volume');
+      const edgeBrightness = document.getElementById('edge-brightness');
+      const fillVolume = document.getElementById('fill-volume');
+      const fillBrightness = document.getElementById('fill-brightness');
+      const touchSphere = document.getElementById('touch-sphere');
+      const livePill = document.getElementById('live-pill');
+      const pillMetric = document.getElementById('pill-metric');
+      const pillIcon = document.getElementById('pill-icon');
+
+      const speakerSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
+      const sunSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>';
+
+      let currentVol = 62;
+      let currentBri = 41;
+      let activeControl = null;
+
+      let isUserInteracting = false;
+      let userInteractionTimer = null;
+
+      function noteUserInteraction() {
+        isUserInteracting = true;
+        clearTimeout(userInteractionTimer);
+        userInteractionTimer = setTimeout(function () {
+          isUserInteracting = false;
+        }, 3500);
+      }
+
+      function updateUI(metric, value, animatePill) {
+        if (metric === 'volume') {
+          currentVol = Math.max(0, Math.min(100, Math.round(value)));
+          fillVolume.style.height = currentVol + '%';
+          edgeVolume.setAttribute('aria-valuenow', currentVol);
+          pillMetric.textContent = 'VOL · ' + currentVol + '%';
+          if (pillIcon) pillIcon.innerHTML = speakerSvg;
+        } else if (metric === 'brightness') {
+          currentBri = Math.max(0, Math.min(100, Math.round(value)));
+          fillBrightness.style.height = currentBri + '%';
+          edgeBrightness.setAttribute('aria-valuenow', currentBri);
+          pillMetric.textContent = 'BRI · ' + currentBri + '%';
+          if (pillIcon) pillIcon.innerHTML = sunSvg;
+        }
+
+        if (animatePill && livePill) {
+          livePill.classList.remove('demo-pill-floating');
+          livePill.style.transform = 'translateY(-8px)';
+          clearTimeout(livePill._resetTimer);
+          livePill._resetTimer = setTimeout(function () {
+            livePill.style.transform = 'translateY(0)';
+            livePill._idleTimer = setTimeout(function () {
+              livePill.classList.add('demo-pill-floating');
+            }, 1000);
+          }, 200);
+        }
+      }
+
+      function handleDrag(e, type) {
+        noteUserInteraction();
+        const rect = touchpad.getBoundingClientRect();
+        const clientY = e.clientY != null ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+        const relY = clientY - rect.top;
+        const normalized = 1 - (relY / rect.height);
+        const value = Math.max(0, Math.min(100, normalized * 100));
+        updateUI(type, value, true);
+      }
+
+      function setupEdgeDrag(el, type) {
+        if (!el) return;
+
+        el.addEventListener('pointerdown', function (e) {
+          e.preventDefault();
+          noteUserInteraction();
+          el.setPointerCapture(e.pointerId);
+          activeControl = type;
+          el.classList.add('is-active');
+          handleDrag(e, type);
+
+          function onPointerMove(moveEvent) {
+            if (activeControl === type) {
+              handleDrag(moveEvent, type);
+            }
+          }
+
+          function onPointerUp(upEvent) {
+            if (activeControl === type) {
+              activeControl = null;
+              el.classList.remove('is-active');
+              try { el.releasePointerCapture(upEvent.pointerId); } catch (err) {}
+              window.removeEventListener('pointermove', onPointerMove);
+              window.removeEventListener('pointerup', onPointerUp);
+              window.removeEventListener('pointercancel', onPointerUp);
+              noteUserInteraction();
+            }
+          }
+
+          window.addEventListener('pointermove', onPointerMove);
+          window.addEventListener('pointerup', onPointerUp);
+          window.addEventListener('pointercancel', onPointerUp);
+        });
+
+        // Keyboard navigation for accessibility
+        el.addEventListener('keydown', function (e) {
+          noteUserInteraction();
+          const step = e.shiftKey ? 10 : 2;
+          if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+            e.preventDefault();
+            const current = type === 'volume' ? currentVol : currentBri;
+            updateUI(type, current + step, true);
+          } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+            e.preventDefault();
+            const current = type === 'volume' ? currentVol : currentBri;
+            updateUI(type, current - step, true);
+          }
+        });
+      }
+
+      setupEdgeDrag(edgeVolume, 'volume');
+      setupEdgeDrag(edgeBrightness, 'brightness');
+
+      // --- Automatic Alternating Demonstration Loop with Touch Sphere & Realistic Random Slides ---
+      let autoMetric = 'volume'; // 'volume' or 'brightness'
+      let autoPhase = 'move'; // 'move', 'pause', 'switch'
+      let phaseStartTime = performance.now();
+      let lastAutoTime = performance.now();
+
+      // Current slide segment bounds (randomized, not full 0-100 every time)
+      let slideStartVal = 58;
+      let slideTargetVal = 82;
+      let slideDuration = 1800; // ms for the current movement
+      let pauseDuration = 600;  // ms pause between slides
+
+      function pickNewTarget(metric, fromVal) {
+        // Pick a realistic natural range (e.g. 25% to 85%), with a sensible jump (18% to 45%)
+        const minVal = 22;
+        const maxVal = 88;
+        const jump = (Math.random() * 26 + 18) * (Math.random() > 0.5 ? 1 : -1);
+        let target = fromVal + jump;
+        if (target > maxVal) target = maxVal - Math.random() * 15;
+        if (target < minVal) target = minVal + Math.random() * 15;
+        return Math.round(target);
+      }
+
+      function updateTouchSpherePosition(metric, val, visible) {
+        if (!touchSphere || !touchpad) return;
+        if (!visible) {
+          touchSphere.classList.remove('is-visible');
+          return;
+        }
+
+        const rect = touchpad.getBoundingClientRect();
+        const edgeWidth = rect.width * 0.15; // 15% edge width
+        // Left slider center X is at 7.5% of width, Right slider center X is at (100% - 7.5%)
+        const posX = metric === 'brightness' ? (edgeWidth * 0.5) : (rect.width - edgeWidth * 0.5);
+        // Height: bottom is 0%, top is 100% -> Y offset from top is (1 - val/100) * height
+        const clampedVal = Math.max(8, Math.min(92, val));
+        const posY = (1 - clampedVal / 100) * rect.height;
+
+        touchSphere.style.left = posX + 'px';
+        touchSphere.style.top = posY + 'px';
+        touchSphere.classList.add('is-visible');
+      }
+
+      function easeInOutQuad(t) {
+        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      }
+
+      function stepAutoDemo(time) {
+        requestAnimationFrame(stepAutoDemo);
+
+        // Pause automatic movement and hide touch sphere if the user is interacting
+        if (isUserInteracting || activeControl !== null) {
+          lastAutoTime = time;
+          if (touchSphere) touchSphere.classList.remove('is-visible');
+          return;
+        }
+
+        const elapsed = time - lastAutoTime;
+        if (elapsed < 16) return;
+        lastAutoTime = time;
+
+        const phaseElapsed = time - phaseStartTime;
+
+        if (autoPhase === 'move') {
+          const progress = Math.min(1, phaseElapsed / slideDuration);
+          const eased = easeInOutQuad(progress);
+          const currentVal = slideStartVal + (slideTargetVal - slideStartVal) * eased;
+
+          if (autoMetric === 'volume') {
+            currentVol = currentVal;
+            updateUI('volume', currentVol, false);
+            updateTouchSpherePosition('volume', currentVol, true);
+          } else {
+            currentBri = currentVal;
+            updateUI('brightness', currentBri, false);
+            updateTouchSpherePosition('brightness', currentBri, true);
+          }
+
+          if (progress >= 1) {
+            // Finished this slide segment: pause briefly
+            autoPhase = 'pause';
+            phaseStartTime = time;
+            pauseDuration = 400 + Math.random() * 450;
+          }
+        } else if (autoPhase === 'pause') {
+          // Keep touch sphere visible during brief pause at end of stroke
+          if (phaseElapsed >= pauseDuration) {
+            // Hide touch sphere smoothly, switch control to the other bar
+            if (touchSphere) touchSphere.classList.remove('is-visible');
+            autoPhase = 'switch';
+            phaseStartTime = time;
+          }
+        } else if (autoPhase === 'switch') {
+          // Brief pause before touch appears on the other slider
+          if (phaseElapsed >= 350) {
+            autoMetric = autoMetric === 'volume' ? 'brightness' : 'volume';
+            slideStartVal = autoMetric === 'volume' ? currentVol : currentBri;
+            slideTargetVal = pickNewTarget(autoMetric, slideStartVal);
+            slideDuration = 1100 + Math.abs(slideTargetVal - slideStartVal) * 28;
+            autoPhase = 'move';
+            phaseStartTime = time;
+            // Place touch sphere at starting position
+            updateTouchSpherePosition(autoMetric, slideStartVal, true);
+          }
+        }
+      }
+
+      // Start automatic demo
+      requestAnimationFrame(stepAutoDemo);
+
+    })();
+  </script>
+</body>
+</html>

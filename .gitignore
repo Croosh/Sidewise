@@ -17,3 +17,7 @@
 .env
 .env.*
 !.env.example
+
+# Design skill artifacts
+.taste-skill/
+
