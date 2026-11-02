@@ -10,6 +10,7 @@ pub mod osd;
 pub mod raw_input;
 pub mod single_instance;
 pub mod startup;
+pub mod updater;
 
 pub use audio::WindowsVolumeControl;
 pub use brightness::WindowsBrightnessControl;
@@ -21,3 +22,7 @@ pub use osd::OsdController;
 pub use raw_input::{get_latest_device_info, RawInputListener};
 pub use single_instance::SingleInstance;
 pub use startup::StartupManager;
+pub use updater::{
+    apply_update, check_for_updates, show_tray_notification, spawn_background_update_checker,
+    UpdateInfo, APP_VERSION,
+};

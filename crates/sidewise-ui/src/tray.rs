@@ -26,6 +26,7 @@ pub struct TrayCallbacks {
     pub on_toggle_flyout: Box<dyn Fn() + Send + Sync>,
     pub on_open_settings: Box<dyn Fn() + Send + Sync>,
     pub on_open_setup: Box<dyn Fn() + Send + Sync>,
+    pub on_check_updates: Box<dyn Fn() + Send + Sync>,
     pub on_quit: Box<dyn Fn() + Send + Sync>,
 }
 
@@ -106,6 +107,10 @@ impl TrayManager {
 
             Self { hwnd, nid }
         }
+    }
+
+    pub fn hwnd(&self) -> HWND {
+        self.hwnd
     }
 }
 
@@ -235,14 +240,7 @@ unsafe fn show_tray_context_menu(hwnd: HWND) {
             CMD_FLYOUT => (cb.on_toggle_flyout)(),
             CMD_SETTINGS => (cb.on_open_settings)(),
             CMD_SETUP => (cb.on_open_setup)(),
-            CMD_UPDATES => {
-                let _ = windows::Win32::UI::WindowsAndMessaging::MessageBoxW(
-                    hwnd,
-                    w!("Sidewise is currently up to date (v1.0.0)."),
-                    w!("Check for Updates"),
-                    windows::Win32::UI::WindowsAndMessaging::MB_OK | windows::Win32::UI::WindowsAndMessaging::MB_ICONINFORMATION,
-                );
-            }
+            CMD_UPDATES => (cb.on_check_updates)(),
             CMD_QUIT => (cb.on_quit)(),
             _ => {}
         }

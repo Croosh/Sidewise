@@ -14,8 +14,9 @@ use sidewise_ui::{
     FlyoutWindow, SettingsWindow, SetupGuideWindow, TrayCallbacks, TrayManager,
 };
 use sidewise_win::{
-    CursorFreezer, OsdController, RawInputListener, SingleInstance,
-    WindowsBrightnessControl, WindowsMediaControl, WindowsVolumeControl,
+    apply_update, check_for_updates, spawn_background_update_checker, CursorFreezer,
+    OsdController, RawInputListener, SingleInstance, WindowsBrightnessControl,
+    WindowsMediaControl, WindowsVolumeControl,
 };
 use windows::Win32::Foundation::HWND;
 use windows::Win32::System::Threading::{OpenEventW, WaitForSingleObject, EVENT_ALL_ACCESS};
@@ -128,6 +129,65 @@ fn main() {
 
     // 6. Initialize System Tray Icon
     let flyout_toggle = Arc::clone(&flyout);
+    let on_check_updates = move || {
+        thread::spawn(|| {
+            match check_for_updates() {
+                Ok(info) if info.has_update => {
+                    let confirm_msg = format!(
+                        "A new version of Sidewise is available (v{} -> v{}).\n\nWould you like to download and install this update now?",
+                        info.current_version, info.latest_version
+                    );
+                    let wide_msg: Vec<u16> = confirm_msg.encode_utf16().chain(Some(0)).collect();
+                    let wide_title: Vec<u16> = "Sidewise Update Available\0".encode_utf16().collect();
+                    unsafe {
+                        let res = windows::Win32::UI::WindowsAndMessaging::MessageBoxW(
+                            HWND::default(),
+                            windows::core::PCWSTR(wide_msg.as_ptr()),
+                            windows::core::PCWSTR(wide_title.as_ptr()),
+                            windows::Win32::UI::WindowsAndMessaging::MB_YESNO | windows::Win32::UI::WindowsAndMessaging::MB_ICONINFORMATION,
+                        );
+                        if res == windows::Win32::UI::WindowsAndMessaging::IDYES {
+                            if let Err(e) = apply_update() {
+                                let err_msg: Vec<u16> = format!("Update failed: {}\0", e).encode_utf16().collect();
+                                let err_title: Vec<u16> = "Update Error\0".encode_utf16().collect();
+                                let _ = windows::Win32::UI::WindowsAndMessaging::MessageBoxW(
+                                    HWND::default(),
+                                    windows::core::PCWSTR(err_msg.as_ptr()),
+                                    windows::core::PCWSTR(err_title.as_ptr()),
+                                    windows::Win32::UI::WindowsAndMessaging::MB_OK | windows::Win32::UI::WindowsAndMessaging::MB_ICONERROR,
+                                );
+                            }
+                        }
+                    }
+                }
+                Ok(info) => {
+                    let msg: Vec<u16> = format!("Sidewise is up to date (v{}).\0", info.current_version).encode_utf16().collect();
+                    let title: Vec<u16> = "Check for Updates\0".encode_utf16().collect();
+                    unsafe {
+                        let _ = windows::Win32::UI::WindowsAndMessaging::MessageBoxW(
+                            HWND::default(),
+                            windows::core::PCWSTR(msg.as_ptr()),
+                            windows::core::PCWSTR(title.as_ptr()),
+                            windows::Win32::UI::WindowsAndMessaging::MB_OK | windows::Win32::UI::WindowsAndMessaging::MB_ICONINFORMATION,
+                        );
+                    }
+                }
+                Err(err) => {
+                    let msg: Vec<u16> = format!("Unable to check for updates: {}\0", err).encode_utf16().collect();
+                    let title: Vec<u16> = "Check for Updates\0".encode_utf16().collect();
+                    unsafe {
+                        let _ = windows::Win32::UI::WindowsAndMessaging::MessageBoxW(
+                            HWND::default(),
+                            windows::core::PCWSTR(msg.as_ptr()),
+                            windows::core::PCWSTR(title.as_ptr()),
+                            windows::Win32::UI::WindowsAndMessaging::MB_OK | windows::Win32::UI::WindowsAndMessaging::MB_ICONWARNING,
+                        );
+                    }
+                }
+            }
+        });
+    };
+
     let tray_callbacks = TrayCallbacks {
         on_toggle_flyout: Box::new(move || {
             flyout_toggle.toggle();
@@ -136,12 +196,14 @@ fn main() {
         on_open_setup: Box::new(move || {
             SetupGuideWindow::open();
         }),
+        on_check_updates: Box::new(on_check_updates),
         on_quit: Box::new(|| unsafe {
             PostQuitMessage(0);
         }),
     };
 
-    let _tray_manager = TrayManager::new(tray_callbacks);
+    let tray_manager = TrayManager::new(tray_callbacks);
+    spawn_background_update_checker(tray_manager.hwnd());
 
     // 7. Start Raw Input Listener
     let (_raw_input_listener, frame_rx) = RawInputListener::new();
