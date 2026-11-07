@@ -1,6 +1,6 @@
 [package]
 name = "sidewise-app"
-version = "1.0.2"
+version = "1.0.3"
 edition = "2021"
 description = "Main application executable for Sidewise"
 

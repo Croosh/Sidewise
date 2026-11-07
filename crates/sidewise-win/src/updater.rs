@@ -7,7 +7,7 @@ use windows::Win32::UI::Shell::{
     Shell_NotifyIconW, NIM_MODIFY, NOTIFYICONDATAW, NIF_INFO, NIIF_INFO,
 };
 
-pub const APP_VERSION: &str = "1.0.2";
+pub const APP_VERSION: &str = "1.0.3";
 const REPO_OWNER: &str = "Croosh";
 const REPO_NAME: &str = "Sidewise";
 
@@ -41,12 +41,22 @@ pub fn check_for_updates() -> Result<UpdateInfo, String> {
     let latest_tag = latest.version().trim_start_matches('v');
     let has_update = self_update::version::bump_is_greater(current, latest_tag).unwrap_or(false);
 
+    let tag_with_v = if latest.version().starts_with('v') {
+        latest.version().to_string()
+    } else {
+        format!("v{}", latest.version())
+    };
+
     let download_url = latest
         .assets()
         .iter()
         .find(|a| a.name().contains("Sidewise-v") && a.name().ends_with(".zip"))
-        .map(|a| a.download_url().to_string())
-        .or_else(|| latest.assets().first().map(|a| a.download_url().to_string()));
+        .map(|a| format!("https://github.com/{}/{}/releases/download/{}/{}", REPO_OWNER, REPO_NAME, tag_with_v, a.name()))
+        .or_else(|| {
+            latest.assets().first().map(|a| {
+                format!("https://github.com/{}/{}/releases/download/{}/{}", REPO_OWNER, REPO_NAME, tag_with_v, a.name())
+            })
+        });
 
     Ok(UpdateInfo {
         current_version: current.to_string(),
@@ -80,7 +90,18 @@ pub fn apply_update() -> Result<(), String> {
         .find(|a| a.name().ends_with(".zip") || a.name().ends_with(".exe"))
         .ok_or_else(|| "No compatible release asset found".to_string())?;
 
-    info!("Found asset: {} at {}", asset.name(), asset.download_url());
+    let tag_with_v = if latest.version().starts_with('v') {
+        latest.version().to_string()
+    } else {
+        format!("v{}", latest.version())
+    };
+
+    let download_url = format!(
+        "https://github.com/{}/{}/releases/download/{}/{}",
+        REPO_OWNER, REPO_NAME, tag_with_v, asset.name()
+    );
+
+    info!("Found asset: {} downloading from {}", asset.name(), download_url);
 
     // Download to temp directory
     let temp_dir = tempfile::tempdir().map_err(|e| format!("Temp dir error: {}", e))?;
@@ -89,7 +110,7 @@ pub fn apply_update() -> Result<(), String> {
     let mut download_file = std::fs::File::create(&download_path)
         .map_err(|e| format!("Failed to create download target: {}", e))?;
 
-    self_update::Download::from_url(asset.download_url())
+    self_update::Download::from_url(&download_url)
         .show_download_progress(false)
         .download_to(&mut download_file)
         .map_err(|e| format!("Download error: {}", e))?;

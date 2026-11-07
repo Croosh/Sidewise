@@ -1,6 +1,6 @@
 [package]
 name = "sidewise-ui"
-version = "1.0.2"
+version = "1.0.3"
 edition = "2021"
 description = "UI layer for Sidewise: Tray icon, Flyout, Settings, and Setup Guide"
 
