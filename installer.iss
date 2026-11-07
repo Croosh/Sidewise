@@ -1,6 +1,6 @@
 ; Inno Setup Script for Sidewise
 #define MyAppName "Sidewise"
-#define MyAppVersion "1.0.1"
+#define MyAppVersion "1.0.2"
 #define MyAppPublisher "Sidewise Team"
 #define MyAppExeName "sidewise.exe"
 
@@ -15,7 +15,7 @@ DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=dist
-OutputBaseFilename=Sidewise-v1.0.1-Setup
+OutputBaseFilename=Sidewise-v1.0.2-Setup
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern

@@ -7,7 +7,7 @@ use windows::Win32::UI::Shell::{
     Shell_NotifyIconW, NIM_MODIFY, NOTIFYICONDATAW, NIF_INFO, NIIF_INFO,
 };
 
-pub const APP_VERSION: &str = "1.0.1";
+pub const APP_VERSION: &str = "1.0.2";
 const REPO_OWNER: &str = "Croosh";
 const REPO_NAME: &str = "Sidewise";
 

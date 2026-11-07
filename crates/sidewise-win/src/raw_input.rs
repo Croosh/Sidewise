@@ -6,13 +6,13 @@ use crossbeam_channel::{bounded, Receiver, Sender};
 use sidewise_core::profile::{DeviceIdentity, DeviceProfile};
 use sidewise_core::types::{Modifiers, TouchFrame};
 use windows::core::{w, PCWSTR};
-use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM, HANDLE};
+use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     GetAsyncKeyState, VK_CONTROL, VK_MENU, VK_SHIFT,
 };
 use windows::Win32::UI::Input::{
     GetRawInputData, RegisterRawInputDevices, HRAWINPUT, RAWINPUT, RAWINPUTDEVICE,
-    RAWINPUTHEADER, RIDEV_DEVNOTIFY, RIDEV_INPUTSINK, RID_INPUT, RIM_TYPEHID,
+    RAWINPUTHEADER, RIDEV_INPUTSINK, RID_INPUT, RIM_TYPEHID,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW, GetMessageW,
@@ -27,9 +27,6 @@ pub static LATEST_ACTIVE_DEVICE: RwLock<Option<(DeviceIdentity, DeviceProfile)>>
 pub fn get_latest_device_info() -> Option<(DeviceIdentity, DeviceProfile)> {
     LATEST_ACTIVE_DEVICE.read().ok().and_then(|guard| guard.clone())
 }
-
-const WM_INPUT_DEVICE_CHANGE: u32 = 0x00FE;
-const GIDC_ARRIVAL: usize = 1;
 
 pub struct RawInputListener {
     frame_rx: Receiver<(TouchFrame, Modifiers)>,
@@ -133,7 +130,7 @@ fn run_input_thread(
         let rid = RAWINPUTDEVICE {
             usUsagePage: 0x0D,
             usUsage: 0x05,
-            dwFlags: RIDEV_INPUTSINK | RIDEV_DEVNOTIFY,
+            dwFlags: RIDEV_INPUTSINK,
             hwndTarget: hwnd,
         };
 
@@ -143,15 +140,15 @@ fn run_input_thread(
         let mut raw_buf = vec![0u8; 1024];
 
         let mut msg = MSG::default();
-        while running.load(Ordering::Relaxed) && GetMessageW(&mut msg, HWND::default(), 0, 0).as_bool() {
-            if msg.message == WM_INPUT_DEVICE_CHANGE {
-                let is_arrival = msg.wParam.0 == GIDC_ARRIVAL;
-                let hdev = HANDLE(msg.lParam.0 as *mut _);
-                parser.handle_device_change(hdev, is_arrival);
-                if is_arrival {
-                    let _ = RegisterRawInputDevices(&[rid], std::mem::size_of::<RAWINPUTDEVICE>() as u32);
-                }
-            } else if msg.message == WM_INPUT {
+        loop {
+            if !running.load(Ordering::Relaxed) {
+                break;
+            }
+            let res = GetMessageW(&mut msg, hwnd, 0, 0);
+            if res.0 <= 0 {
+                break;
+            }
+            if msg.message == WM_INPUT {
                 let hraw = HRAWINPUT(msg.lParam.0 as *mut _);
                 let mut size = 0u32;
                 let _ = GetRawInputData(
