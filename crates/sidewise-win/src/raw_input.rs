@@ -17,7 +17,7 @@ use windows::Win32::UI::Input::{
 use windows::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW, GetMessageW,
     RegisterClassExW, TranslateMessage, CS_HREDRAW, CS_VREDRAW, HICON, MSG,
-    WNDCLASSEXW, WM_INPUT, WS_OVERLAPPEDWINDOW,
+    WNDCLASSEXW, WM_INPUT, HWND_MESSAGE, WINDOW_STYLE,
 };
 use crate::hid::HidParser;
 use crate::mouse_hook::CursorFreezer;
@@ -110,12 +110,12 @@ fn run_input_thread(
             windows::Win32::UI::WindowsAndMessaging::WINDOW_EX_STYLE(0),
             class_name,
             w!("Sidewise Hidden Input"),
-            WS_OVERLAPPEDWINDOW,
+            WINDOW_STYLE(0),
             0,
             0,
             0,
             0,
-            HWND::default(),
+            HWND_MESSAGE,
             None,
             windows::Win32::System::LibraryLoader::GetModuleHandleW(None).unwrap_or_default(),
             None,
@@ -144,7 +144,7 @@ fn run_input_thread(
             if !running.load(Ordering::Relaxed) {
                 break;
             }
-            let res = GetMessageW(&mut msg, hwnd, 0, 0);
+            let res = GetMessageW(&mut msg, None, 0, 0);
             if res.0 <= 0 {
                 break;
             }

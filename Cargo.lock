@@ -1637,7 +1637,7 @@ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 
 [[package]]
 name = "sidewise-app"
-version = "1.0.3"
+version = "1.0.4"
 dependencies = [
  "anyhow",
  "crossbeam-channel",
@@ -1651,7 +1651,7 @@ dependencies = [
 
 [[package]]
 name = "sidewise-core"
-version = "1.0.3"
+version = "1.0.4"
 dependencies = [
  "serde",
  "smallvec",
@@ -1662,7 +1662,7 @@ dependencies = [
 
 [[package]]
 name = "sidewise-ui"
-version = "1.0.3"
+version = "1.0.4"
 dependencies = [
  "crossbeam-channel",
  "sidewise-core",
@@ -1673,7 +1673,7 @@ dependencies = [
 
 [[package]]
 name = "sidewise-win"
-version = "1.0.3"
+version = "1.0.4"
 dependencies = [
  "crossbeam-channel",
  "self-replace",
