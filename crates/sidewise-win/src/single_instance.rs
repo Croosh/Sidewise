@@ -37,6 +37,10 @@ impl SingleInstance {
         }
     }
 
+    pub fn event_handle(&self) -> HANDLE {
+        self.event
+    }
+
     pub fn signal_existing() {
         unsafe {
             let wide_event = to_wide_null(EVENT_NAME);

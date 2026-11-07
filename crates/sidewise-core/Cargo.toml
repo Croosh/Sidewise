@@ -1,6 +1,6 @@
 [package]
 name = "sidewise-core"
-version = "0.1.0"
+version = "1.0.1"
 edition = "2021"
 description = "Core gesture engine, config schema, and domain types for Sidewise"
 

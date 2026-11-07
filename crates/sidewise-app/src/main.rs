@@ -19,7 +19,7 @@ use sidewise_win::{
     WindowsMediaControl, WindowsVolumeControl,
 };
 use windows::Win32::Foundation::HWND;
-use windows::Win32::System::Threading::{OpenEventW, WaitForSingleObject, EVENT_ALL_ACCESS};
+use windows::Win32::System::Threading::WaitForSingleObject;
 use windows::Win32::UI::WindowsAndMessaging::{
     DispatchMessageW, GetMessageW, PostQuitMessage, TranslateMessage, MSG,
 };
@@ -235,16 +235,22 @@ fn main() {
 
     // 9. Single Instance Listener Thread (signals flyout when another instance launches)
     let flyout_signal = Arc::clone(&flyout);
+    let singleton_event_raw = single_instance.event_handle().0 as usize;
     thread::Builder::new()
         .name("singleton-listener".into())
         .spawn(move || {
-            let event_name = windows::core::w!("Local\\Sidewise.ShowFlyout");
+            if singleton_event_raw == 0 {
+                return;
+            }
             unsafe {
-                if let Ok(event) = OpenEventW(EVENT_ALL_ACCESS, false, event_name) {
-                    loop {
-                        if WaitForSingleObject(event, windows::Win32::System::Threading::INFINITE).0 == 0 {
-                            flyout_signal.show_anchored();
-                        }
+                let event = windows::Win32::Foundation::HANDLE(singleton_event_raw as *mut core::ffi::c_void);
+                loop {
+                    let wait_res = WaitForSingleObject(event, windows::Win32::System::Threading::INFINITE);
+                    if wait_res.0 == 0 {
+                        flyout_signal.show_anchored();
+                    } else {
+                        // If wait fails or handle is closed, sleep to avoid high CPU spin
+                        thread::sleep(std::time::Duration::from_millis(500));
                     }
                 }
             }

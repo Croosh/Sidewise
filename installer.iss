@@ -1,6 +1,6 @@
 ; Inno Setup Script for Sidewise
 #define MyAppName "Sidewise"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "Sidewise Team"
 #define MyAppExeName "sidewise.exe"
 
@@ -15,7 +15,7 @@ DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=dist
-OutputBaseFilename=Sidewise-v1.0.0-Setup
+OutputBaseFilename=Sidewise-v1.0.1-Setup
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
@@ -35,7 +35,6 @@ Name: "startupentry"; Description: "Launch Sidewise automatically when signing i
 
 [Files]
 Source: "target\release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "dist\Sidewise-v1.0.0-windows-x64\README.txt"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

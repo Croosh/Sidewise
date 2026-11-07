@@ -1,6 +1,6 @@
 [package]
 name = "sidewise-win"
-version = "0.1.0"
+version = "1.0.1"
 edition = "2021"
 description = "Windows platform backend for Sidewise: Raw Input, HID, audio, brightness, OSD, mouse hook"
 
